@@ -8,7 +8,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [ ] **Checkpoint:** real phone install, hardcoded URL downloads and plays, review with Saheed
 
 ## Phase 2: Core features (Android)
-- [ ] Task 3: App appears in the share sheet and reads the link (S) — deps: 2
+- [x] Task 3: App appears in the share sheet and reads the link (S) — deps: 2 — code done, phone check pending
 - [ ] Task 4: Quality picker — all available resolutions (like YouTube) + MP3 entry (M) — deps: 3
 - [ ] Task 5: Background download + progress notification, saved to Downloads (M) — deps: 4
 - [ ] Task 6: MP3 audio download, saved to Downloads (S) — deps: 5

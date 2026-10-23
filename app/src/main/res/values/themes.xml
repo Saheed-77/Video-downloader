@@ -1,4 +1,11 @@
 <resources>
     <!-- Window theme only; the screens themselves are styled by Compose's MaterialTheme. -->
     <style name="Theme.VideoDownloader" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Transparent window for the share sheet, so the app you shared from stays visible behind it. -->
+    <style name="Theme.VideoDownloader.Share">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

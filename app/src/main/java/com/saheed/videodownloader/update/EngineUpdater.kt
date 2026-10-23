@@ -2,6 +2,7 @@ package com.saheed.videodownloader.update
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import com.yausername.youtubedl_android.YoutubeDL
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,7 +63,7 @@ object EngineUpdater {
             val status = engineLock.write {
                 YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel.STABLE)
             }
-            prefs(context).edit().putLong(KEY_LAST_UPDATED, System.currentTimeMillis()).apply()
+            prefs(context).edit { putLong(KEY_LAST_UPDATED, System.currentTimeMillis()) }
             return when (status) {
                 YoutubeDL.UpdateStatus.DONE -> "Updated to ${version(context)}"
                 else -> "Already up to date"

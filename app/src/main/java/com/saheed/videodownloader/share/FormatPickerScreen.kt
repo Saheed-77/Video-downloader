@@ -28,6 +28,7 @@ import com.saheed.videodownloader.formats.FormatParser
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.update.EngineUpdater
 import com.yausername.youtubedl_android.YoutubeDL
+import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -57,7 +58,9 @@ fun FormatPicker(url: String, onPick: (title: String, option: QualityOption) -> 
         }
         state = try {
             val info = withContext(Dispatchers.IO) {
-                EngineUpdater.useEngine { YoutubeDL.getInstance().getInfo(url) }
+                // --no-playlist: a link opened from inside a playlist describes just that one video.
+                val request = YoutubeDLRequest(url).addOption("--no-playlist")
+                EngineUpdater.useEngine { YoutubeDL.getInstance().getInfo(request) }
             }
             PickerState.Loaded(info.title ?: "video", FormatParser.fromVideoInfo(info))
         } catch (e: Exception) {

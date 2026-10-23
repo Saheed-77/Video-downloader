@@ -37,7 +37,13 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
         // Each download gets its own cache folder, so finding the result and cleaning up is easy.
         val workDir = File(applicationContext.cacheDir, "downloads/$id")
-        setForeground(foregroundInfo(title, -1))
+        try {
+            setForeground(foregroundInfo(title, -1))
+        } catch (e: IllegalStateException) {
+            // Android 12+ can refuse to start foreground work once our screen has closed. The download
+            // still runs (progress is shown as a normal notification), it's just easier for Android to stop.
+            Log.w(TAG, "Couldn't run as a foreground worker", e)
+        }
 
         return try {
             var lastShown = -1

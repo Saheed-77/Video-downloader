@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import androidx.annotation.RequiresApi
 import java.io.File
 
 /**
@@ -31,6 +32,7 @@ object MediaStoreSaver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) saveWithMediaStore(context, file)
         else saveLegacy(context, file)
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun saveWithMediaStore(context: Context, file: File): Uri {
         val resolver = context.contentResolver
         val values = ContentValues().apply {

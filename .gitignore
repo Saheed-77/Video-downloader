@@ -1,0 +1,15 @@
+*.iml
+.gradle/
+.kotlin/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+# Working copy of the overnight build plan (kept out of git)
+/tasks/overnight-build-plan.md

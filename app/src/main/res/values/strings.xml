@@ -1,0 +1,4 @@
+<resources>
+    <!-- The name shown in the app drawer and the share sheet. Change it here. -->
+    <string name="app_name">Video Downloader</string>
+</resources>

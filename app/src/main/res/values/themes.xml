@@ -1,0 +1,4 @@
+<resources>
+    <!-- Window theme only; the screens themselves are styled by Compose's MaterialTheme. -->
+    <style name="Theme.VideoDownloader" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

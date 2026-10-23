@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.download.Downloader
+import com.saheed.videodownloader.share.FormatPicker
+import com.saheed.videodownloader.share.UrlExtractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,7 +37,8 @@ fun MainScreen() {
 
     // `remember { mutableStateOf(..) }` is a value Compose watches: changing it redraws the screen.
     // `by` lets us read/write it like a normal variable.
-    var url by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("") }
+    var pickerUrl by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf<Float?>(null) }
     var status by remember { mutableStateOf(App.initError?.let { "Engine error: $it" }) }
 
@@ -49,22 +52,32 @@ fun MainScreen() {
         ) {
             Text("Paste a video link", style = MaterialTheme.typography.titleLarge)
             OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
+                value = text,
+                onValueChange = { text = it; pickerUrl = null },
                 label = { Text("Link") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             Button(
-                enabled = url.isNotBlank() && progress == null && App.initError == null,
+                enabled = text.isNotBlank() && progress == null,
                 onClick = {
+                    pickerUrl = UrlExtractor.extract(text)
+                    status = if (pickerUrl == null) "No link found" else null
+                }
+            ) { Text("Find qualities") }
+
+            pickerUrl?.let { url ->
+                FormatPicker(url) { _, option ->
+                    pickerUrl = null
                     progress = 0f
-                    status = "Downloading…"
+                    status = "Downloading ${option.label}…"
                     scope.launch {
                         status = try {
                             // Dispatchers.IO = a thread pool for slow I/O, so the UI stays responsive.
                             val file = withContext(Dispatchers.IO) {
-                                Downloader.download(url.trim(), File(context.cacheDir, "downloads")) { p ->
+                                // MP3 is handled from Task 6; until then it falls back to best MP4.
+                                val format = option.format ?: Downloader.BEST_MP4
+                                Downloader.download(url, format, File(context.cacheDir, "downloads")) { p ->
                                     progress = p
                                 }
                             }
@@ -75,7 +88,7 @@ fun MainScreen() {
                         progress = null
                     }
                 }
-            ) { Text("Download") }
+            }
 
             progress?.let {
                 LinearProgressIndicator(progress = { it / 100f }, modifier = Modifier.fillMaxWidth())

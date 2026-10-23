@@ -11,13 +11,13 @@ object Downloader {
     const val BEST_MP4 = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best"
 
     /**
-     * Downloads [url] into [outDir] and returns the finished file.
+     * Downloads [url] in yt-dlp [format] into [outDir] and returns the finished file.
      * Blocking: call it from a background thread. [onProgress] gets 0–100.
      */
-    fun download(url: String, outDir: File, onProgress: (Float) -> Unit): File {
+    fun download(url: String, format: String, outDir: File, onProgress: (Float) -> Unit): File {
         outDir.mkdirs()
         val request = YoutubeDLRequest(url).apply {
-            addOption("-f", BEST_MP4)
+            addOption("-f", format)
             addOption("--merge-output-format", "mp4")
             addOption("--no-playlist")
             addOption("--no-mtime")

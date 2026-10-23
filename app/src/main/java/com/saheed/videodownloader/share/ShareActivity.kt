@@ -2,6 +2,7 @@ package com.saheed.videodownloader.share
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -40,8 +41,10 @@ class ShareActivity : ComponentActivity() {
                         if (url == null) {
                             Text("No link found", style = MaterialTheme.typography.titleMedium)
                         } else {
-                            Text("Link", style = MaterialTheme.typography.titleMedium)
-                            Text(url, Modifier.padding(top = 8.dp))
+                            FormatPicker(url) { title, option ->
+                                Toast.makeText(this@ShareActivity, "${option.label}: $title", Toast.LENGTH_SHORT).show()
+                                finish()
+                            }
                         }
                     }
                 }

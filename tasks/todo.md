@@ -9,7 +9,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 
 ## Phase 2: Core features (Android)
 - [x] Task 3: App appears in the share sheet and reads the link (S) — deps: 2 — code done, phone check pending
-- [ ] Task 4: Quality picker — all available resolutions (like YouTube) + MP3 entry (M) — deps: 3
+- [x] Task 4: Quality picker — all available resolutions (like YouTube) + MP3 entry (M) — deps: 3 — code done, phone check pending (approved addition: "Best quality" row at the top)
 - [ ] Task 5: Background download + progress notification, saved to Downloads (M) — deps: 4
 - [ ] Task 6: MP3 audio download, saved to Downloads (S) — deps: 5
 - [ ] **Checkpoint:** share from YouTube → 720p MP4 and MP3 both land in Downloads and play; download survives leaving the app; review

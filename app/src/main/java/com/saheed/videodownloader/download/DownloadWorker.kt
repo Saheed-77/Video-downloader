@@ -11,8 +11,9 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.saheed.videodownloader.formats.QualityOption
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runInterruptible
 import java.io.File
 
 /**
@@ -24,6 +25,9 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
     private val notificationId = id.hashCode()
     private val resultNotificationId = notificationId + 1
+
+    // The notification's Cancel button: asks WorkManager to stop this worker.
+    private val cancelIntent get() = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
 
     override suspend fun doWork(): Result {
         val url = inputData.getString(KEY_URL) ?: return Result.failure()
@@ -37,29 +41,40 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
         return try {
             var lastShown = -1
-            val file = withContext(Dispatchers.IO) {
+            val cancel = cancelIntent
+            // runInterruptible: if the worker is cancelled, the blocking yt-dlp call gets interrupted,
+            // which makes youtubedl-android kill the yt-dlp process.
+            val file = runInterruptible(Dispatchers.IO) {
                 Downloader.download(url, format, isAudio, workDir) { progress ->
                     val percent = progress.toInt()
                     if (percent != lastShown) { // yt-dlp reports many times a second; update only on change
                         lastShown = percent
-                        Notifications.show(applicationContext, notificationId, Notifications.progress(applicationContext, title, percent))
+                        Notifications.show(
+                            applicationContext, notificationId,
+                            Notifications.progress(applicationContext, title, percent, cancel)
+                        )
                     }
                 }
             }
             val uri = MediaStoreSaver.save(applicationContext, file)
             Notifications.complete(applicationContext, resultNotificationId, title, uri, MediaStoreSaver.mimeTypeOf(file))
             Result.success()
+        } catch (e: CancellationException) {
+            throw e // cancelled by the user: no "failed" notification, cleanup still runs below
         } catch (e: Exception) {
             Log.e(TAG, "Download failed: $url", e)
-            Notifications.failed(applicationContext, resultNotificationId, title, e.message ?: "Unknown error")
+            Notifications.failed(applicationContext, resultNotificationId, title, ErrorMapper.toMessage(e.message))
             Result.failure()
         } finally {
+            // Removes partial files too. Also clear the progress notification in case a last
+            // progress update raced with the end of the download.
             workDir.deleteRecursively()
+            Notifications.cancel(applicationContext, notificationId)
         }
     }
 
     private fun foregroundInfo(title: String, percent: Int): ForegroundInfo {
-        val notification = Notifications.progress(applicationContext, title, percent)
+        val notification = Notifications.progress(applicationContext, title, percent, cancelIntent)
         // Android 10+ wants to know what kind of foreground work this is: a data transfer.
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ForegroundInfo(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)

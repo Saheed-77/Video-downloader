@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
+import com.saheed.videodownloader.download.ErrorMapper
 import com.saheed.videodownloader.formats.FormatParser
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.update.EngineUpdater
@@ -60,7 +61,7 @@ fun FormatPicker(url: String, onPick: (title: String, option: QualityOption) -> 
             }
             PickerState.Loaded(info.title ?: "video", FormatParser.fromVideoInfo(info))
         } catch (e: Exception) {
-            PickerState.Failed(e.message ?: e.toString())
+            PickerState.Failed(ErrorMapper.toMessage(e.message))
         }
     }
 

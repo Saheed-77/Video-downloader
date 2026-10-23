@@ -16,7 +16,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 
 ## Phase 3: Robustness (Android)
 - [x] Task 7: yt-dlp auto-update weekly + manual update button (S) — deps: 6 — code done, phone check pending
-- [ ] Task 8: Friendly errors + cancel download (S) — deps: 6
+- [x] Task 8: Friendly errors + cancel download (S) — deps: 6 — code done, phone check pending
 - [ ] Task 9: Real-site test matrix + install on your phone (S) — deps: 7, 8
 - [ ] **Checkpoint:** Android complete, review
 

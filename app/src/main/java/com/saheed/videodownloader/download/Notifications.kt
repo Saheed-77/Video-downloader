@@ -36,8 +36,11 @@ object Notifications {
         )
     }
 
-    /** "Downloading <title> — 42%". [percent] < 0 shows an indeterminate bar (e.g. while starting). */
-    fun progress(context: Context, title: String, percent: Int): Notification =
+    /**
+     * "Downloading <title> — 42%" with a Cancel button that runs [cancel].
+     * [percent] < 0 shows an indeterminate bar (e.g. while starting).
+     */
+    fun progress(context: Context, title: String, percent: Int, cancel: PendingIntent): Notification =
         NotificationCompat.Builder(context, CHANNEL_PROGRESS)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(title)
@@ -45,6 +48,7 @@ object Notifications {
             .setProgress(100, percent.coerceAtLeast(0), percent < 0)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cancel", cancel)
             .build()
 
     /** "Download complete" — tapping opens the file (or the Downloads app on Android 7–9). */
@@ -82,6 +86,8 @@ object Notifications {
                 .build()
         )
     }
+
+    fun cancel(context: Context, id: Int) = NotificationManagerCompat.from(context).cancel(id)
 
     fun show(context: Context, id: Int, notification: Notification) {
         // Android 13+ needs the user's OK to post notifications; skip quietly if they said no.

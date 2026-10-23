@@ -7,18 +7,30 @@ import java.io.File
 /** Thin wrapper around yt-dlp: builds the command line and runs it. */
 object Downloader {
 
-    /** Best MP4 (video + audio merged by ffmpeg). */
-    const val BEST_MP4 = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best"
-
     /**
-     * Downloads [url] in yt-dlp [format] into [outDir] and returns the finished file.
+     * Downloads [url] into [outDir] and returns the finished file.
+     * Video: [format] is yt-dlp's `-f` value, merged into an MP4 by ffmpeg.
+     * Audio ([isAudio]): the best audio track, converted to MP3 by ffmpeg.
      * Blocking: call it from a background thread. [onProgress] gets 0–100.
      */
-    fun download(url: String, format: String, outDir: File, onProgress: (Float) -> Unit): File {
+    fun download(
+        url: String,
+        format: String?,
+        isAudio: Boolean,
+        outDir: File,
+        onProgress: (Float) -> Unit,
+    ): File {
         outDir.mkdirs()
         val request = YoutubeDLRequest(url).apply {
-            addOption("-f", format)
-            addOption("--merge-output-format", "mp4")
+            if (isAudio) {
+                addOption("-f", "bestaudio/best")
+                addOption("-x")
+                addOption("--audio-format", "mp3")
+                addOption("--audio-quality", "0")
+            } else {
+                addOption("-f", format ?: "bestvideo+bestaudio/best")
+                addOption("--merge-output-format", "mp4")
+            }
             addOption("--no-playlist")
             addOption("--no-mtime")
             addOption("-o", File(outDir, "%(title).100B.%(ext)s").absolutePath)

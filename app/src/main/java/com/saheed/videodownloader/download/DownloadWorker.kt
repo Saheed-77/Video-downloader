@@ -28,7 +28,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
     override suspend fun doWork(): Result {
         val url = inputData.getString(KEY_URL) ?: return Result.failure()
         val title = inputData.getString(KEY_TITLE) ?: "video"
-        val format = inputData.getString(KEY_FORMAT) ?: Downloader.BEST_MP4
+        val format = inputData.getString(KEY_FORMAT)
+        val isAudio = inputData.getBoolean(KEY_AUDIO, false)
 
         // Each download gets its own cache folder, so finding the result and cleaning up is easy.
         val workDir = File(applicationContext.cacheDir, "downloads/$id")
@@ -37,7 +38,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         return try {
             var lastShown = -1
             val file = withContext(Dispatchers.IO) {
-                Downloader.download(url, format, workDir) { progress ->
+                Downloader.download(url, format, isAudio, workDir) { progress ->
                     val percent = progress.toInt()
                     if (percent != lastShown) { // yt-dlp reports many times a second; update only on change
                         lastShown = percent
@@ -72,11 +73,19 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_URL = "url"
         private const val KEY_TITLE = "title"
         private const val KEY_FORMAT = "format"
+        private const val KEY_AUDIO = "audio"
 
         /** Queues a download; it starts right away and survives leaving the app. */
         fun enqueue(context: Context, url: String, title: String, option: QualityOption) {
             val request = OneTimeWorkRequestBuilder<DownloadWorker>()
-                .setInputData(workDataOf(KEY_URL to url, KEY_TITLE to title, KEY_FORMAT to option.format))
+                .setInputData(
+                    workDataOf(
+                        KEY_URL to url,
+                        KEY_TITLE to title,
+                        KEY_FORMAT to option.format,
+                        KEY_AUDIO to option.isAudio,
+                    )
+                )
                 .build()
             WorkManager.getInstance(context).enqueue(request)
         }

@@ -4,7 +4,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 
 ## Phase 1: Foundation (Android)
 - [x] Task 1: Project skeleton + yt-dlp/ffmpeg initialise on device (S) — deps: none — code done, phone check pending
-- [ ] Task 2: Paste a URL → download best MP4 into app storage (S) — deps: 1
+- [x] Task 2: Paste a URL → download best MP4 into app storage (S) — deps: 1 — code done, phone check pending
 - [ ] **Checkpoint:** real phone install, hardcoded URL downloads and plays, review with Saheed
 
 ## Phase 2: Core features (Android)

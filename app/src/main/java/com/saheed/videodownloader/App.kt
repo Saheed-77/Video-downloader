@@ -2,6 +2,7 @@ package com.saheed.videodownloader
 
 import android.app.Application
 import android.util.Log
+import com.saheed.videodownloader.download.Notifications
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
@@ -14,6 +15,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        Notifications.createChannels(this)
         try {
             YoutubeDL.getInstance().init(this)
             FFmpeg.getInstance().init(this)

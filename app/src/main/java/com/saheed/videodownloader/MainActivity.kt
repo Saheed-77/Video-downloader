@@ -5,11 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.saheed.videodownloader.ui.AppTheme
 import com.saheed.videodownloader.ui.MainScreen
+import com.saheed.videodownloader.ui.requestDownloadPermissions
 
 /** The screen you get when tapping the app icon. */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestDownloadPermissions()
         // setContent { } hands the screen to Jetpack Compose: the UI is described by
         // @Composable functions instead of XML layouts.
         setContent {

@@ -14,7 +14,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.saheed.videodownloader.download.DownloadWorker
 import com.saheed.videodownloader.ui.AppTheme
+import com.saheed.videodownloader.ui.requestDownloadPermissions
 
 /**
  * Opened from another app's Share menu. The manifest's *intent filter* (ACTION_SEND + text/plain)
@@ -26,6 +28,7 @@ class ShareActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestDownloadPermissions()
         val url = UrlExtractor.extract(intent.getStringExtra(Intent.EXTRA_TEXT))
 
         setContent {
@@ -42,7 +45,9 @@ class ShareActivity : ComponentActivity() {
                             Text("No link found", style = MaterialTheme.typography.titleMedium)
                         } else {
                             FormatPicker(url) { title, option ->
-                                Toast.makeText(this@ShareActivity, "${option.label}: $title", Toast.LENGTH_SHORT).show()
+                                // Hand the download to the background worker and get out of the way.
+                                DownloadWorker.enqueue(this@ShareActivity, url, title, option)
+                                Toast.makeText(this@ShareActivity, "Downloading ${option.label}…", Toast.LENGTH_SHORT).show()
                                 finish()
                             }
                         }

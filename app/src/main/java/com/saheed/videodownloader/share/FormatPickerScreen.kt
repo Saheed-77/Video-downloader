@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.formats.FormatParser
 import com.saheed.videodownloader.formats.QualityOption
+import com.saheed.videodownloader.update.EngineUpdater
 import com.yausername.youtubedl_android.YoutubeDL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -54,7 +55,9 @@ fun FormatPicker(url: String, onPick: (title: String, option: QualityOption) -> 
             return@LaunchedEffect
         }
         state = try {
-            val info = withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(url) }
+            val info = withContext(Dispatchers.IO) {
+                EngineUpdater.useEngine { YoutubeDL.getInstance().getInfo(url) }
+            }
             PickerState.Loaded(info.title ?: "video", FormatParser.fromVideoInfo(info))
         } catch (e: Exception) {
             PickerState.Failed(e.message ?: e.toString())

@@ -15,7 +15,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [ ] **Checkpoint:** share from YouTube → 720p MP4 and MP3 both land in Downloads and play; download survives leaving the app; review
 
 ## Phase 3: Robustness (Android)
-- [ ] Task 7: yt-dlp auto-update weekly + manual update button (S) — deps: 6
+- [x] Task 7: yt-dlp auto-update weekly + manual update button (S) — deps: 6 — code done, phone check pending
 - [ ] Task 8: Friendly errors + cancel download (S) — deps: 6
 - [ ] Task 9: Real-site test matrix + install on your phone (S) — deps: 7, 8
 - [ ] **Checkpoint:** Android complete, review

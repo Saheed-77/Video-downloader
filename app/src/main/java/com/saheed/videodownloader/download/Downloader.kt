@@ -1,5 +1,6 @@
 package com.saheed.videodownloader.download
 
+import com.saheed.videodownloader.update.EngineUpdater
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import java.io.File
@@ -35,7 +36,9 @@ object Downloader {
             addOption("--no-mtime")
             addOption("-o", File(outDir, "%(title).100B.%(ext)s").absolutePath)
         }
-        YoutubeDL.getInstance().execute(request) { progress, _, _ -> onProgress(progress) }
+        EngineUpdater.useEngine {
+            YoutubeDL.getInstance().execute(request) { progress, _, _ -> onProgress(progress) }
+        }
         // yt-dlp picks the final file name itself, so take the newest file it left behind.
         return outDir.listFiles()?.filter { it.isFile }?.maxByOrNull { it.lastModified() }
             ?: error("Download finished but no file was found")

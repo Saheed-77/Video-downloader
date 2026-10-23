@@ -1,6 +1,6 @@
 # Version catalog: every dependency version lives here, build files refer to them as libs.xxx
 [versions]
-agp = "9.4.1"
+agp = "9.2.1"
 kotlin = "2.4.21"
 coreKtx = "1.18.0"
 activityCompose = "1.12.4"

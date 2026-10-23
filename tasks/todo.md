@@ -42,7 +42,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 ## Morning notes (overnight build, 2026-10-24)
 Built and checked on the PC only: `assembleDebug`, 34 unit tests and `lintDebug` (0 errors) all pass.
 Nothing has run on a phone yet, so every "phone check pending" above still needs the S24.
-- **Toolchain:** AGP 9.4.1 (built-in Kotlin), Gradle 9.6.0, Kotlin 2.4.21, compile/target SDK 36, min SDK 24.
+- **Toolchain:** AGP 9.2.1 (built-in Kotlin; newest that Android Studio 2026.1.1 supports), Gradle 9.6.0, Kotlin 2.4.21, compile/target SDK 36, min SDK 24.
   The debug APK is about 68 MB (arm64 only). The library bundles Python 3.12, so updating to the latest yt-dlp is fine.
 - **First launch** updates yt-dlp automatically (no saved date yet), so the first link may take a few extra seconds.
 - **Small additions while building:**

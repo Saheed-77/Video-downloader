@@ -50,7 +50,7 @@ object FormatParser {
                     biggest.acodec == "none" -> biggest.sizeBytes + bestAudioSize
                     else -> biggest.sizeBytes
                 }
-                p to QualityOption.forHeight("${p}p", group.maxOf { it.height }, size)
+                p to QualityOption.forHeight("${p}p", group.maxOf { it.height }, size, resolution = p)
             }
             .sortedByDescending { it.first }
             .map { it.second }

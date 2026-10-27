@@ -4,10 +4,15 @@ import com.saheed.videodownloader.formats.DownloadExtras
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
-/** The yt-dlp command-line options each kind of download gets. */
+/** The yt-dlp command-line options each kind of download gets, and finding the finished file. */
 class DownloaderOptionsTest {
+
+    @get:Rule
+    val tmp = TemporaryFolder()
 
     private val format = "bestvideo[height<=720]+bestaudio/best[height<=720]"
 
@@ -39,5 +44,14 @@ class DownloaderOptionsTest {
     fun alwaysSingleVideo() {
         val options = Downloader.options(format, isAudio = false, DownloadExtras())
         assertEquals(1, options.count { it.first == "--no-playlist" })
+    }
+
+    @Test
+    fun finishedFileIsTheVideoNotANewerSubtitleFile() {
+        // What happened on the S24: the MP4 got an older time than the leftover .vtt.
+        val dir = tmp.newFolder()
+        val video = dir.resolve("talk.mp4").apply { writeBytes(ByteArray(50_000)); setLastModified(1_000_000L) }
+        dir.resolve("talk.en.vtt").apply { writeBytes(ByteArray(2_000)); setLastModified(2_000_000L) }
+        assertEquals(video, Downloader.mainFile(dir))
     }
 }

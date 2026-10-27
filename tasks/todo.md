@@ -33,7 +33,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] U3: Download records + Downloads tab (progress, Cancel, Open, Share, Retry, Remove) — checked on the S24
 - [x] U4: Notification actions — Share (finished), Retry (failed) — checked on the S24
 - [ ] **Checkpoint:** review Downloads
-- [x] U5: Subtitles — English only (Saheed chose, avoids YouTube "too many requests"); real subtitles, not auto-captions — phone check pending
+- [x] U5: Subtitles — English only (Saheed chose, avoids YouTube "too many requests"); real subtitles, not auto-captions — checked on the S24 (English mov_text track confirmed)
 - [ ] U6: Clip a section
 - [ ] U7: Playlist download
 - [ ] **Checkpoint:** review extras

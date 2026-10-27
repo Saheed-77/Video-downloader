@@ -1,5 +1,6 @@
 package com.saheed.videodownloader.download
 
+import android.util.Log
 import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.update.EngineUpdater
 import com.yausername.youtubedl_android.YoutubeDL
@@ -8,6 +9,8 @@ import java.io.File
 
 /** Thin wrapper around yt-dlp: builds the command line and runs it. */
 object Downloader {
+
+    private const val TAG = "Downloader"
 
     /**
      * Downloads [url] into [outDir] and returns the finished file.
@@ -29,14 +32,20 @@ object Downloader {
             if (value == null) request.addOption(name) else request.addOption(name, value)
         }
         request.addOption("-o", File(outDir, "%(title).100B.%(ext)s").absolutePath)
-        EngineUpdater.useEngine {
+        val response = EngineUpdater.useEngine {
             YoutubeDL.getInstance().execute(request) { progress, _, _ -> onProgress(progress) }
         }
-        // yt-dlp picks the final file name itself (subtitles end up inside the MP4, so the
-        // newest file is still the video).
-        return outDir.listFiles()?.filter { it.isFile }?.maxByOrNull { it.lastModified() }
-            ?: error("Download finished but no file was found")
+        // The last lines of yt-dlp's output show which steps ran (merging, embedding subtitles).
+        Log.d(TAG, "yt-dlp output (end):\n" + response.out.takeLast(2000))
+        return mainFile(outDir) ?: error("Download finished but no file was found")
     }
+
+    /**
+     * yt-dlp picks the final file name itself, so find it: the biggest file in [outDir] is the
+     * video or MP3. Not "the newest": after embedding subtitles, yt-dlp gives the MP4 the time of
+     * its oldest input, so a leftover subtitle file (.vtt) can look newer.
+     */
+    fun mainFile(outDir: File): File? = outDir.listFiles()?.filter { it.isFile }?.maxByOrNull { it.length() }
 
     /** yt-dlp options as (name, value) pairs; value is null for plain flags. Kept separate so tests can check it. */
     fun options(format: String?, isAudio: Boolean, extras: DownloadExtras): List<Pair<String, String?>> {

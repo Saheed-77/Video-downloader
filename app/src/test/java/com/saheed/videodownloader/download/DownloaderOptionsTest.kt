@@ -53,6 +53,14 @@ class DownloaderOptionsTest {
     }
 
     @Test
+    fun clipsGetNoSubtitles() {
+        // yt-dlp doesn't cut subtitles to the clip, so they'd be out of sync.
+        val options = Downloader.options(format, false, DownloadExtras(subtitles = true, clip = ClipRange(60, 90)))
+        assertFalse(options.any { it.first.contains("sub") })
+        assertTrue("--download-sections" to "*60-90" in options)
+    }
+
+    @Test
     fun alwaysSingleVideo() {
         val options = Downloader.options(format, isAudio = false, DownloadExtras())
         assertEquals(1, options.count { it.first == "--no-playlist" })

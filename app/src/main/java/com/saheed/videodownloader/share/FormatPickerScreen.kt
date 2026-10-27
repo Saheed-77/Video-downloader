@@ -152,13 +152,16 @@ fun FormatPicker(
                 item { VideoHeader(s.meta) }
                 item {
                     Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OptionChip("Subtitles", R.drawable.ic_subtitles, subtitles) {
+                        // Subtitles can't be cut to a clip (they'd start from 0:00 of the full video),
+                        // so the chip is greyed out while Clip is on.
+                        OptionChip("Subtitles", R.drawable.ic_subtitles, subtitles && !clipOn, enabled = !clipOn) {
                             subtitles = it
                             prefs.edit { putBoolean(KEY_SUBTITLES, it) }
                         }
                         OptionChip("Clip", R.drawable.ic_cut, clipOn) { clipOn = it }
                     }
-                    if (subtitles) Hint("English subtitles are added to the video when it has them.")
+                    if (clipOn) Hint("Subtitles aren't available for clips.")
+                    else if (subtitles) Hint("English subtitles are added to the video when it has them.")
                     if (clipOn) {
                         ClipFields(
                             start = clipStart,
@@ -172,7 +175,7 @@ fun FormatPicker(
                 }
                 item { SectionLabel("Video") }
                 items(video) { option ->
-                    QualityRow(option, canPick) { onPick(s.meta, option, DownloadExtras(subtitles, clip)) }
+                    QualityRow(option, canPick) { onPick(s.meta, option, DownloadExtras(subtitles && clip == null, clip)) }
                 }
                 if (audio.isNotEmpty()) {
                     item { SectionLabel("Audio") }
@@ -245,9 +248,16 @@ private fun VideoHeader(meta: VideoMeta) {
 
 /** An on/off *filter chip* (the small rounded toggle button) with an icon. */
 @Composable
-private fun OptionChip(label: String, @DrawableRes icon: Int, selected: Boolean, onChange: (Boolean) -> Unit) {
+private fun OptionChip(
+    label: String,
+    @DrawableRes icon: Int,
+    selected: Boolean,
+    enabled: Boolean = true,
+    onChange: (Boolean) -> Unit,
+) {
     FilterChip(
         selected = selected,
+        enabled = enabled,
         onClick = { onChange(!selected) },
         label = { Text(label) },
         leadingIcon = { Icon(painterResource(icon), contentDescription = null, Modifier.size(18.dp)) },

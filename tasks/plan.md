@@ -476,7 +476,7 @@ Saheed picked these after the first successful downloads on the S24.
 | **Checkpoint** | Saheed reviews Downloads | | |
 | U5 | Subtitles chip (remembered), embeds subtitles into the MP4 | Player can switch subtitles on | Video with captions |
 | U6 | Clip chip: start/end time, exact cuts (`--download-sections` + `--force-keyframes-at-cuts`) | 1:00–1:30 gives a ~30 s file; MP3 clip works | |
-| U6 fix | Clip + Subtitles: subtitles must be shifted to the clip (they currently start from 0:00 of the full video). ffmpeg's own shift options give wrong times (tested on the PC), so the approach is Saheed's choice | Words match the speech in a clipped video | TEDx clip 1:00–1:30 |
+| U6 fix | Clip + Subtitles: yt-dlp doesn't cut subtitles to the clip and ffmpeg's shift options gave wrong times (tested on the PC). Saheed chose: no subtitles on clips | Subtitles chip greyed out while Clip is on, with a short note | Turn Clip on in the picker |
 | U6b | Change quality: on a running card (⋮) and on cancelled/failed cards (⋮, next to Retry); opens the quality sheet with the same Subtitles/Clip choices, and the new pick replaces the old card | Running download stops and a new card with the new quality starts; failed notification cleared | Start 1080p, change to 480p |
 | U7 | Playlist links: header with video count, fixed quality list, videos download one after another (max 100) | 3–5 video playlist lands in Downloads, each shows in the tab | |
 | **Checkpoint** | Saheed reviews extras | | |

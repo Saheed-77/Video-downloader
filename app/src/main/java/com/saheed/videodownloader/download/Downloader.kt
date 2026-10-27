@@ -58,7 +58,8 @@ object Downloader {
         } else {
             options += "-f" to (format ?: "bestvideo+bestaudio/best")
             options += "--merge-output-format" to "mp4"
-            if (extras.subtitles) {
+            // Not for clips: yt-dlp doesn't cut subtitles, so they'd start from 0:00 of the full video.
+            if (extras.subtitles && extras.clip == null) {
                 // English only (en, en-US, en-GB…): one or two requests, so YouTube is unlikely
                 // to answer "too many requests", which would fail the whole download.
                 // Only real subtitles, not YouTube's automatic captions.

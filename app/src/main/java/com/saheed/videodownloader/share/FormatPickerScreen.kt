@@ -3,6 +3,7 @@ package com.saheed.videodownloader.share
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import android.content.Context
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,11 +38,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
@@ -48,6 +53,7 @@ import coil3.compose.AsyncImage
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.R
 import com.saheed.videodownloader.download.ErrorMapper
+import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.FormatParser
 import com.saheed.videodownloader.formats.QualityOption
@@ -82,6 +88,10 @@ fun FormatPicker(url: String, onPick: (meta: VideoMeta, option: QualityOption, e
     // The Subtitles chip remembers its last setting (saved in SharedPreferences).
     val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
     var subtitles by remember { mutableStateOf(prefs.getBoolean(KEY_SUBTITLES, false)) }
+    // The clip is per video, so it resets for a new link.
+    var clipOn by remember(url) { mutableStateOf(false) }
+    var clipStart by remember(url) { mutableStateOf("") }
+    var clipEnd by remember(url) { mutableStateOf("") }
     var state by remember(url) { mutableStateOf<PickerState>(PickerState.Loading) }
     // Bumped by "Try again" so the lookup below runs once more.
     var attempt by remember(url) { mutableIntStateOf(0) }
@@ -126,21 +136,43 @@ fun FormatPicker(url: String, onPick: (meta: VideoMeta, option: QualityOption, e
 
         is PickerState.Loaded -> {
             val (audio, video) = s.options.partition { it.isAudio }
+            val clipCheck = if (clipOn) ClipRange.check(clipStart, clipEnd, s.meta.durationSeconds) else null
+            val clip = (clipCheck as? ClipRange.Result.Valid)?.range
+            // Quality rows can't be tapped while the clip times need fixing.
+            val canPick = clipCheck !is ClipRange.Result.Invalid
             // LazyColumn = a scrolling list that only builds the rows on screen (like RecyclerView).
             // The header is its first item, so everything scrolls together.
             LazyColumn {
                 item { VideoHeader(s.meta) }
                 item {
-                    SubtitlesChip(subtitles) {
-                        subtitles = it
-                        prefs.edit { putBoolean(KEY_SUBTITLES, it) }
+                    Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OptionChip("Subtitles", R.drawable.ic_subtitles, subtitles) {
+                            subtitles = it
+                            prefs.edit { putBoolean(KEY_SUBTITLES, it) }
+                        }
+                        OptionChip("Clip", R.drawable.ic_cut, clipOn) { clipOn = it }
+                    }
+                    if (subtitles) Hint("English subtitles are added to the video when it has them.")
+                    if (clipOn) {
+                        ClipFields(
+                            start = clipStart,
+                            end = clipEnd,
+                            endPlaceholder = s.meta.durationText ?: "1:30",
+                            error = (clipCheck as? ClipRange.Result.Invalid)?.message,
+                            onStart = { clipStart = it },
+                            onEnd = { clipEnd = it },
+                        )
                     }
                 }
                 item { SectionLabel("Video") }
-                items(video) { option -> QualityRow(option) { onPick(s.meta, option, DownloadExtras(subtitles)) } }
+                items(video) { option ->
+                    QualityRow(option, canPick) { onPick(s.meta, option, DownloadExtras(subtitles, clip)) }
+                }
                 if (audio.isNotEmpty()) {
                     item { SectionLabel("Audio") }
-                    items(audio) { option -> QualityRow(option) { onPick(s.meta, option, DownloadExtras()) } }
+                    items(audio) { option ->
+                        QualityRow(option, canPick) { onPick(s.meta, option, DownloadExtras(clip = clip)) }
+                    }
                 }
             }
         }
@@ -205,26 +237,55 @@ private fun VideoHeader(meta: VideoMeta) {
     }
 }
 
-/** On/off chip for embedding subtitles into the video (MP3 ignores it). */
+/** An on/off *filter chip* (the small rounded toggle button) with an icon. */
 @Composable
-private fun SubtitlesChip(selected: Boolean, onChange: (Boolean) -> Unit) {
-    Column(Modifier.padding(top = 12.dp)) {
-        FilterChip(
-            selected = selected,
-            onClick = { onChange(!selected) },
-            label = { Text("Subtitles") },
-            leadingIcon = {
-                Icon(painterResource(R.drawable.ic_subtitles), contentDescription = null, Modifier.size(18.dp))
-            },
+private fun OptionChip(label: String, @DrawableRes icon: Int, selected: Boolean, onChange: (Boolean) -> Unit) {
+    FilterChip(
+        selected = selected,
+        onClick = { onChange(!selected) },
+        label = { Text(label) },
+        leadingIcon = { Icon(painterResource(icon), contentDescription = null, Modifier.size(18.dp)) },
+    )
+}
+
+@Composable
+private fun Hint(text: String, isError: Boolean = false) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp),
+    )
+}
+
+/** Start and End boxes for "Clip". Empty Start = the beginning, empty End = the end of the video. */
+@Composable
+private fun ClipFields(
+    start: String,
+    end: String,
+    endPlaceholder: String,
+    error: String?,
+    onStart: (String) -> Unit,
+    onEnd: (String) -> Unit,
+) {
+    // Decimal keyboard: digits plus "." (the parser accepts 1.30 as well as 1:30).
+    val keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedTextField(
+            value = start, onValueChange = onStart,
+            label = { Text("Start") }, placeholder = { Text("0:00") },
+            isError = error != null, singleLine = true, keyboardOptions = keyboard,
+            modifier = Modifier.weight(1f),
         )
-        if (selected) {
-            Text(
-                "English subtitles are added to the video when it has them.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        OutlinedTextField(
+            value = end, onValueChange = onEnd,
+            label = { Text("End") }, placeholder = { Text(endPlaceholder) },
+            isError = error != null, singleLine = true, keyboardOptions = keyboard,
+            modifier = Modifier.weight(1f),
+        )
     }
+    if (error != null) Hint(error, isError = true)
+    else Hint("Exact cuts take a little longer: the phone re-encodes the clip.")
 }
 
 @Composable
@@ -238,7 +299,7 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun QualityRow(option: QualityOption, onClick: () -> Unit) {
+private fun QualityRow(option: QualityOption, enabled: Boolean, onClick: () -> Unit) {
     // ListItem = Material's standard list row: leading badge, text, trailing size.
     ListItem(
         headlineContent = { Text(option.label, style = MaterialTheme.typography.bodyLarge) },
@@ -248,8 +309,9 @@ private fun QualityRow(option: QualityOption, onClick: () -> Unit) {
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier
+            .alpha(if (enabled) 1f else 0.38f) // Material's standard "disabled" look
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
     )
 }
 

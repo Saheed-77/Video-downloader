@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.QualityOption
 import kotlinx.coroutines.CancellationException
@@ -35,7 +36,12 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val title = inputData.getString(KEY_TITLE) ?: "video"
         val format = inputData.getString(KEY_FORMAT)
         val isAudio = inputData.getBoolean(KEY_AUDIO, false)
-        val extras = DownloadExtras(subtitles = inputData.getBoolean(KEY_SUBTITLES, false))
+        val clipStart = inputData.getInt(KEY_CLIP_START, -1)
+        val clipEnd = inputData.getInt(KEY_CLIP_END, -1)
+        val extras = DownloadExtras(
+            subtitles = inputData.getBoolean(KEY_SUBTITLES, false),
+            clip = if (clipStart >= 0 && clipEnd > clipStart) ClipRange(clipStart, clipEnd) else null,
+        )
         val recordId = id.toString()
 
         // Each download gets its own cache folder, so finding the result and cleaning up is easy.
@@ -110,6 +116,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_FORMAT = "format"
         private const val KEY_AUDIO = "audio"
         private const val KEY_SUBTITLES = "subtitles"
+        private const val KEY_CLIP_START = "clipStart"
+        private const val KEY_CLIP_END = "clipEnd"
 
         /**
          * Queues a download and adds it to the Downloads tab; it starts right away and survives
@@ -131,6 +139,9 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         KEY_FORMAT to option.format,
                         KEY_AUDIO to option.isAudio,
                         KEY_SUBTITLES to extras.subtitles,
+                        // -1 = no clip (WorkManager input can't hold nulls for numbers).
+                        KEY_CLIP_START to (extras.clip?.startSeconds ?: -1),
+                        KEY_CLIP_END to (extras.clip?.endSeconds ?: -1),
                     )
                 )
                 .build()
@@ -144,6 +155,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     format = option.format,
                     isAudio = option.isAudio,
                     subtitles = extras.subtitles,
+                    clipStart = extras.clip?.startSeconds,
+                    clipEnd = extras.clip?.endSeconds,
                     status = DownloadStatus.QUEUED,
                     createdAt = System.currentTimeMillis(),
                 )

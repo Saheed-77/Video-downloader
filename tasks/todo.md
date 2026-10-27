@@ -34,7 +34,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] U4: Notification actions — Share (finished), Retry (failed) — checked on the S24
 - [ ] **Checkpoint:** review Downloads
 - [x] U5: Subtitles — English only (Saheed chose, avoids YouTube "too many requests"); real subtitles, not auto-captions — checked on the S24 (English mov_text track confirmed)
-- [ ] U6: Clip a section
+- [x] U6: Clip a section — checked on the S24 (1:00–1:30 at 720p gave a 30.0 s H.264 MP4 with subtitles)
 - [ ] U7: Playlist download
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — tests, lint, test-matrix rows, docs

@@ -31,6 +31,8 @@ class DownloadStoreTest {
             mime = "video/mp4",
             sizeBytes = 45_000_000L,
             subtitles = true,
+            clipStart = 90,
+            clipEnd = 165,
         )
         assertEquals(done, DownloadRecord.fromJson(done.toJson()))
     }

@@ -193,7 +193,8 @@ private fun MoreMenu(id: String) {
 }
 
 private fun statusText(record: DownloadRecord, percent: Int?, context: android.content.Context): String {
-    val parts = listOf(record.label) + when (record.status) {
+    // "720p · 1:30–2:45 · 46%" for a clip.
+    val parts = listOfNotNull(record.label, record.clip?.displayText) + when (record.status) {
         DownloadStatus.QUEUED -> listOf("Waiting…")
         DownloadStatus.RUNNING -> listOf(percent?.let { "$it%" } ?: "Starting…")
         DownloadStatus.DONE -> listOfNotNull(

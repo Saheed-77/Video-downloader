@@ -1,5 +1,6 @@
 package com.saheed.videodownloader.download
 
+import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DownloadExtras
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +39,17 @@ class DownloaderOptionsTest {
         val options = Downloader.options(null, isAudio = true, DownloadExtras(subtitles = true))
         assertTrue("--audio-format" to "mp3" in options)
         assertFalse(options.any { it.first.contains("sub") })
+    }
+
+    @Test
+    fun clipCutsExactlyForVideoAndMp3() {
+        val clip = DownloadExtras(clip = ClipRange(60, 90))
+        for (isAudio in listOf(false, true)) {
+            val options = Downloader.options(format, isAudio, clip)
+            assertTrue("--download-sections" to "*60-90" in options)
+            assertTrue("--force-keyframes-at-cuts" to null in options)
+        }
+        assertFalse(Downloader.options(format, false, DownloadExtras()).any { it.first == "--download-sections" })
     }
 
     @Test

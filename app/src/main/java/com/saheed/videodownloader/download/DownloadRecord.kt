@@ -1,5 +1,6 @@
 package com.saheed.videodownloader.download
 
+import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.QualityOption
 import org.json.JSONObject
@@ -19,6 +20,9 @@ data class DownloadRecord(
     val format: String?,
     val isAudio: Boolean,
     val subtitles: Boolean = false,
+    /** The clipped part in seconds, or both null for the whole video. */
+    val clipStart: Int? = null,
+    val clipEnd: Int? = null,
     val status: DownloadStatus,
     val createdAt: Long,
     /** The saved file (content:// address), once DONE. Null on Android 7–9. */
@@ -33,7 +37,10 @@ data class DownloadRecord(
     /** The quality row this download was started with (used by Retry). */
     fun toOption() = QualityOption(label, format, isAudio)
 
-    fun toExtras() = DownloadExtras(subtitles = subtitles)
+    val clip: ClipRange?
+        get() = if (clipStart != null && clipEnd != null) ClipRange(clipStart, clipEnd) else null
+
+    fun toExtras() = DownloadExtras(subtitles = subtitles, clip = clip)
 
     fun toJson(): JSONObject = JSONObject()
         .put("id", id)
@@ -44,6 +51,8 @@ data class DownloadRecord(
         .put("format", format)
         .put("isAudio", isAudio)
         .put("subtitles", subtitles)
+        .put("clipStart", clipStart)
+        .put("clipEnd", clipEnd)
         .put("status", status.name)
         .put("createdAt", createdAt)
         .put("uri", uri)
@@ -61,6 +70,8 @@ data class DownloadRecord(
             format = json.stringOrNull("format"),
             isAudio = json.optBoolean("isAudio"),
             subtitles = json.optBoolean("subtitles"),
+            clipStart = if (json.has("clipStart")) json.getInt("clipStart") else null,
+            clipEnd = if (json.has("clipEnd")) json.getInt("clipEnd") else null,
             status = DownloadStatus.valueOf(json.getString("status")),
             createdAt = json.getLong("createdAt"),
             uri = json.stringOrNull("uri"),

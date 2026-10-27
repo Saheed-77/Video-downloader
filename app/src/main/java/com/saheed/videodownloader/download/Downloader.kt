@@ -67,6 +67,12 @@ object Downloader {
                 options += "--embed-subs" to null
             }
         }
+        extras.clip?.let {
+            options += "--download-sections" to it.toSection()
+            // Cut exactly at the chosen times. ffmpeg re-encodes the clip for that, so it's slower;
+            // without it the clip would start at the nearest keyframe, a few seconds off.
+            options += "--force-keyframes-at-cuts" to null
+        }
         options += "--no-playlist" to null
         options += "--no-mtime" to null
         return options

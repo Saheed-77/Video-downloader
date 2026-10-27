@@ -1,7 +1,6 @@
 package com.saheed.videodownloader.formats
 
 import com.yausername.youtubedl_android.mapper.VideoInfo
-import java.util.Locale
 
 /** What the picker shows above the quality list. */
 data class VideoMeta(
@@ -22,13 +21,7 @@ data class VideoMeta(
             thumbnailUrl = info.thumbnail,
         )
 
-        fun formatDuration(seconds: Int): String? {
-            if (seconds <= 0) return null
-            val h = seconds / 3600
-            val m = seconds % 3600 / 60
-            val s = seconds % 60
-            return if (h > 0) String.format(Locale.US, "%d:%02d:%02d", h, m, s)
-            else String.format(Locale.US, "%d:%02d", m, s)
-        }
+        fun formatDuration(seconds: Int): String? =
+            if (seconds <= 0) null else ClipRange.formatTime(seconds)
     }
 }

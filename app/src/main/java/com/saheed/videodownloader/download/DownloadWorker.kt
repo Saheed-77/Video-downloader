@@ -34,6 +34,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val title = inputData.getString(KEY_TITLE) ?: "video"
         val format = inputData.getString(KEY_FORMAT)
         val isAudio = inputData.getBoolean(KEY_AUDIO, false)
+        val recordId = id.toString()
 
         // Each download gets its own cache folder, so finding the result and cleaning up is easy.
         val workDir = File(applicationContext.cacheDir, "downloads/$id")
@@ -45,6 +46,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             Log.w(TAG, "Couldn't run as a foreground worker", e)
         }
 
+        DownloadStore.update(recordId) { it.copy(status = DownloadStatus.RUNNING) }
         return try {
             var lastShown = -1
             val cancel = cancelIntent
@@ -55,6 +57,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     val percent = progress.toInt()
                     if (percent != lastShown) { // yt-dlp reports many times a second; update only on change
                         lastShown = percent
+                        DownloadStore.setProgress(recordId, percent)
                         Notifications.show(
                             applicationContext, notificationId,
                             Notifications.progress(applicationContext, title, percent, cancel)
@@ -62,20 +65,29 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     }
                 }
             }
+            val size = file.length()
+            val mime = MediaStoreSaver.mimeTypeOf(file)
             val uri = MediaStoreSaver.save(applicationContext, file)
-            Notifications.complete(applicationContext, resultNotificationId, title, uri, MediaStoreSaver.mimeTypeOf(file))
+            DownloadStore.update(recordId) {
+                it.copy(status = DownloadStatus.DONE, uri = uri?.toString(), mime = mime, sizeBytes = size)
+            }
+            Notifications.complete(applicationContext, resultNotificationId, title, uri, mime)
             Result.success()
         } catch (e: CancellationException) {
+            DownloadStore.update(recordId) { it.copy(status = DownloadStatus.CANCELLED) }
             throw e // cancelled by the user: no "failed" notification, cleanup still runs below
         } catch (e: Exception) {
             Log.e(TAG, "Download failed: $url", e)
-            Notifications.failed(applicationContext, resultNotificationId, title, ErrorMapper.toMessage(e.message))
+            val message = ErrorMapper.toMessage(e.message)
+            DownloadStore.update(recordId) { it.copy(status = DownloadStatus.FAILED, error = message) }
+            Notifications.failed(applicationContext, resultNotificationId, title, message)
             Result.failure()
         } finally {
             // Removes partial files too. Also clear the progress notification in case a last
             // progress update raced with the end of the download.
             workDir.deleteRecursively()
             Notifications.cancel(applicationContext, notificationId)
+            DownloadStore.clearProgress(recordId)
         }
     }
 
@@ -96,8 +108,11 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_FORMAT = "format"
         private const val KEY_AUDIO = "audio"
 
-        /** Queues a download; it starts right away and survives leaving the app. */
-        fun enqueue(context: Context, url: String, title: String, option: QualityOption) {
+        /**
+         * Queues a download and adds it to the Downloads tab; it starts right away and survives
+         * leaving the app.
+         */
+        fun enqueue(context: Context, url: String, title: String, thumbnailUrl: String?, option: QualityOption) {
             val request = OneTimeWorkRequestBuilder<DownloadWorker>()
                 .setInputData(
                     workDataOf(
@@ -108,6 +123,19 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     )
                 )
                 .build()
+            DownloadStore.add(
+                DownloadRecord(
+                    id = request.id.toString(),
+                    url = url,
+                    title = title,
+                    thumbnailUrl = thumbnailUrl,
+                    label = option.label,
+                    format = option.format,
+                    isAudio = option.isAudio,
+                    status = DownloadStatus.QUEUED,
+                    createdAt = System.currentTimeMillis(),
+                )
+            )
             WorkManager.getInstance(context).enqueue(request)
         }
     }

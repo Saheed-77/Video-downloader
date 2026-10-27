@@ -68,10 +68,10 @@ private val thumbnailShape = RoundedCornerShape(12.dp)
 
 /**
  * Looks up [url] with yt-dlp, shows the video's thumbnail and details, and lists the qualities
- * it really has. Tapping a row calls [onPick] with the video title and the chosen quality.
+ * it really has. Tapping a row calls [onPick] with the video's details and the chosen quality.
  */
 @Composable
-fun FormatPicker(url: String, onPick: (title: String, option: QualityOption) -> Unit) {
+fun FormatPicker(url: String, onPick: (meta: VideoMeta, option: QualityOption) -> Unit) {
     val context = LocalContext.current.applicationContext
     var state by remember(url) { mutableStateOf<PickerState>(PickerState.Loading) }
     // Bumped by "Try again" so the lookup below runs once more.
@@ -122,10 +122,10 @@ fun FormatPicker(url: String, onPick: (title: String, option: QualityOption) -> 
             LazyColumn {
                 item { VideoHeader(s.meta) }
                 item { SectionLabel("Video") }
-                items(video) { option -> QualityRow(option) { onPick(s.meta.title, option) } }
+                items(video) { option -> QualityRow(option) { onPick(s.meta, option) } }
                 if (audio.isNotEmpty()) {
                     item { SectionLabel("Audio") }
-                    items(audio) { option -> QualityRow(option) { onPick(s.meta.title, option) } }
+                    items(audio) { option -> QualityRow(option) { onPick(s.meta, option) } }
                 }
             }
         }

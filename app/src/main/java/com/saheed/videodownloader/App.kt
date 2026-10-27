@@ -2,10 +2,12 @@ package com.saheed.videodownloader
 
 import android.app.Application
 import android.util.Log
+import com.saheed.videodownloader.download.DownloadStore
 import com.saheed.videodownloader.download.Notifications
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
+import java.io.File
 
 /**
  * The Application class runs once when the app process starts, before any screen.
@@ -16,6 +18,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         Notifications.createChannels(this)
+        DownloadStore.init(File(filesDir, "downloads.json"))
         try {
             YoutubeDL.getInstance().init(this)
             FFmpeg.getInstance().init(this)

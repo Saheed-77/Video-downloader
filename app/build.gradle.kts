@@ -43,6 +43,11 @@ android {
             useLegacyPackaging = true
         }
     }
+
+    // In JVM unit tests Android calls like Log.w do nothing instead of throwing "not mocked".
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -63,4 +68,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    // Android's own org.json is an empty stub in JVM unit tests; this is the real one.
+    testImplementation(libs.json)
 }

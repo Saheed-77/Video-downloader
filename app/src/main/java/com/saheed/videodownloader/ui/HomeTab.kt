@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.R
 import com.saheed.videodownloader.formats.QualityOption
+import com.saheed.videodownloader.formats.VideoMeta
 import com.saheed.videodownloader.share.PickerSheet
 import com.saheed.videodownloader.share.UrlExtractor
 import kotlinx.coroutines.launch
@@ -50,7 +51,7 @@ import kotlinx.coroutines.launch
  * [onPick] starts the download.
  */
 @Composable
-fun HomeTab(onPick: (url: String, title: String, option: QualityOption) -> Unit) {
+fun HomeTab(onPick: (url: String, meta: VideoMeta, option: QualityOption) -> Unit) {
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
@@ -164,11 +165,11 @@ fun HomeTab(onPick: (url: String, title: String, option: QualityOption) -> Unit)
     }
 
     pickerUrl?.let { url ->
-        PickerSheet(url, onDismiss = { pickerUrl = null }) { pickedUrl, title, option ->
+        PickerSheet(url, onDismiss = { pickerUrl = null }) { pickedUrl, meta, option ->
             pickerUrl = null
             text = ""
             dismissedLink = pickedUrl
-            onPick(pickedUrl, title, option)
+            onPick(pickedUrl, meta, option)
         }
     }
 }

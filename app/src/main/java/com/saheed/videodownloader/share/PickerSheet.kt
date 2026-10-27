@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.formats.QualityOption
+import com.saheed.videodownloader.formats.VideoMeta
 
 /**
  * The bottom sheet that lists a video's qualities. Used by both the Share menu and the Home tab,
@@ -22,7 +23,7 @@ import com.saheed.videodownloader.formats.QualityOption
 fun PickerSheet(
     url: String?,
     onDismiss: () -> Unit,
-    onPick: (url: String, title: String, option: QualityOption) -> Unit,
+    onPick: (url: String, meta: VideoMeta, option: QualityOption) -> Unit,
 ) {
     // skipPartiallyExpanded: open the sheet fully straight away instead of half-height first.
     ModalBottomSheet(
@@ -44,7 +45,7 @@ fun PickerSheet(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             } else {
-                FormatPicker(url) { title, option -> onPick(url, title, option) }
+                FormatPicker(url) { meta, option -> onPick(url, meta, option) }
             }
         }
     }

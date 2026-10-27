@@ -56,6 +56,9 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.youtubedl.library)
     implementation(libs.youtubedl.ffmpeg)
+    // Coil: loads and caches the video thumbnails shown in the picker.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 

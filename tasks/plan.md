@@ -153,7 +153,7 @@ Task 1: project + yt-dlp init (foundation, highest risk)
 - [ ] Dad shares from YouTube → More → Download Video → picks quality → video in Photos, without help
 
 ### Future (after downloads work — not in current scope)
-- In-app download history screen
+- In-app download history screen (now Phase 5, U3)
 - Settings option to choose the save folder
 
 ---
@@ -455,6 +455,30 @@ Showing only the qualities that exist is possible but much more complex in Short
 **Files likely touched:** `tasks/ios-setup.md` (step-by-step Shortcut build + iCloud share link)
 
 **Estimated scope:** Small
+
+---
+
+## Phase 5: UI redesign and new features (Android) — agreed 2026-10-27
+
+Saheed picked these after the first successful downloads on the S24.
+- **Look:** Material 3 dynamic colour (wallpaper colours), with cards, icons and quality badges.
+- **Layout:** bottom tabs, Home / Downloads / Settings.
+- **New dependency:** Coil 3 for thumbnails. Icons are a few Material vector drawables in `res/drawable`, not the large icons library.
+- **Tabs:** a plain tab index, no navigation library.
+
+| Task | What | Acceptance | Verify on the S24 |
+|------|------|------------|-------------------|
+| U1 | Bottom tabs; Home (link box, Paste button, "copied link found" card, tip); Settings (engine card, app version); one shared picker bottom sheet for Home and Share | Tabs switch; a copied link is offered when the app opens; Paste fills the box; Find qualities opens the sheet; engine update still works | Copy a YouTube link, open the app, tap "Use this link" |
+| U2 | Picker redesign: thumbnail, title, channel, duration; Video/Audio sections; badges Best/4K/2K/HD/SD; error card with Try again | Share from YouTube shows the preview and badges; airplane mode → error card; Try again works | Share a video and a Short |
+| **Checkpoint** | Saheed reviews the new look | | |
+| U3 | Download records (JSON file) + Downloads tab: live %, Cancel, Open, Share, Retry, Remove from list | Records survive closing the app; every action works | Download, cancel one, retry a failed one |
+| U4 | Notification actions: Share on finished, Retry on failed | Both buttons work from the notification shade | |
+| **Checkpoint** | Saheed reviews Downloads | | |
+| U5 | Subtitles chip (remembered), embeds subtitles into the MP4 | Player can switch subtitles on | Video with captions |
+| U6 | Clip chip: start/end time, exact cuts (`--download-sections` + `--force-keyframes-at-cuts`) | 1:00–1:30 gives a ~30 s file; MP3 clip works | |
+| U7 | Playlist links: header with video count, fixed quality list, videos download one after another (max 100) | 3–5 video playlist lands in Downloads, each shows in the tab | |
+| **Checkpoint** | Saheed reviews extras | | |
+| U8 | Wrap-up: tests, lint, test-matrix rows, docs | All green, installed | |
 
 ---
 

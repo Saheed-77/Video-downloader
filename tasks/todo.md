@@ -26,8 +26,21 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [ ] **Checkpoint:** dad shares from YouTube → More → Download Video → picks quality → video in Photos, without help
 - [ ] (Only if Task 10 fails) fallback: home-PC server + Shortcut
 
+## Phase 5: UI redesign + new features (Android) — see plan.md "Phase 5"
+- [x] U1: Bottom tabs, Home (Paste + copied-link card), Settings, shared picker sheet — Downloads tab is added in U3; Coil 3.5.0 (3.6 needs compileSdk 37)
+- [ ] U2: Picker redesign — thumbnail, title, channel, duration, quality badges, Try again
+- [ ] **Checkpoint:** review the new look on the S24
+- [ ] U3: Download records + Downloads tab (progress, Cancel, Open, Share, Retry, Remove)
+- [ ] U4: Notification actions — Share (finished), Retry (failed)
+- [ ] **Checkpoint:** review Downloads
+- [ ] U5: Subtitles
+- [ ] U6: Clip a section
+- [ ] U7: Playlist download
+- [ ] **Checkpoint:** review extras
+- [ ] U8: Wrap-up — tests, lint, test-matrix rows, docs
+
 ## Future (after downloads work)
-- [ ] In-app download history screen
+- [ ] In-app download history screen (now Phase 5, U3)
 - [ ] Settings option to choose the save folder
 
 ## Decisions confirmed by Saheed

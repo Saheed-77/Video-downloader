@@ -46,13 +46,20 @@ object EngineUpdater {
     /** yt-dlp version, e.g. "2026.10.10", or null while still on the version bundled with the app. */
     fun version(context: Context): String? = YoutubeDL.getInstance().version(context)
 
-    /** Weekly auto-update. Blocking; call from a background thread. Failures are only logged. */
+    /**
+     * Weekly auto-update, checked whenever the app is opened or a link is shared. A failed attempt
+     * (e.g. no internet yet) saves no date, so the next open/share simply tries again.
+     * Blocking; call from a background thread. Failures are only logged.
+     * @Synchronized: if two screens ask at once, the second waits and then sees it's no longer due.
+     */
+    @Synchronized
     fun updateIfDue(context: Context) {
         if (!isUpdateDue(lastUpdated(context), System.currentTimeMillis())) return
         try {
             updateNow(context)
         } catch (e: Exception) {
-            Log.w(TAG, "Automatic engine update failed", e)
+            // Message included because Android leaves out the stack trace for network errors.
+            Log.w(TAG, "Automatic engine update failed: $e", e)
         }
     }
 

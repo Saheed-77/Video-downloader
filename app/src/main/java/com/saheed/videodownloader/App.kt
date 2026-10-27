@@ -3,11 +3,9 @@ package com.saheed.videodownloader
 import android.app.Application
 import android.util.Log
 import com.saheed.videodownloader.download.Notifications
-import com.saheed.videodownloader.update.EngineUpdater
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
-import kotlin.concurrent.thread
 
 /**
  * The Application class runs once when the app process starts, before any screen.
@@ -24,10 +22,7 @@ class App : Application() {
         } catch (e: YoutubeDLException) {
             Log.e(TAG, "Failed to initialise the downloader engine", e)
             initError = e.message ?: "Failed to start the downloader engine"
-            return
         }
-        // Weekly yt-dlp update, checked every time the app starts (opened or shared to).
-        thread(name = "engine-update") { EngineUpdater.updateIfDue(this) }
     }
 
     // `companion object` is Kotlin's version of Java static members.

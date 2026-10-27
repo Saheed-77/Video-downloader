@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
@@ -48,6 +49,7 @@ private sealed interface PickerState {
  */
 @Composable
 fun FormatPicker(url: String, onPick: (title: String, option: QualityOption) -> Unit) {
+    val context = LocalContext.current.applicationContext
     var state by remember(url) { mutableStateOf<PickerState>(PickerState.Loading) }
 
     // Re-runs whenever `url` changes; the work runs in the background (Dispatchers.IO).
@@ -58,6 +60,9 @@ fun FormatPicker(url: String, onPick: (title: String, option: QualityOption) -> 
         }
         state = try {
             val info = withContext(Dispatchers.IO) {
+                // Weekly yt-dlp update check before every lookup (covers links shared to the app).
+                // Runs first, so the lookup below already uses the new engine.
+                EngineUpdater.updateIfDue(context)
                 // --no-playlist: a link opened from inside a playlist describes just that one video.
                 val request = YoutubeDLRequest(url).addOption("--no-playlist")
                 EngineUpdater.useEngine { YoutubeDL.getInstance().getInfo(request) }

@@ -81,17 +81,23 @@ private const val KEY_SUBTITLES = "subtitles"
 /**
  * Looks up [url] with yt-dlp, shows the video's thumbnail and details, and lists the qualities
  * it really has. Tapping a row calls [onPick] with the video's details, the chosen quality and the extras.
+ * [initial]: the chips and clip times to start with (used by "Change quality").
  */
 @Composable
-fun FormatPicker(url: String, onPick: (meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit) {
+fun FormatPicker(
+    url: String,
+    initial: DownloadExtras? = null,
+    onPick: (meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit,
+) {
     val context = LocalContext.current.applicationContext
     // The Subtitles chip remembers its last setting (saved in SharedPreferences).
     val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
-    var subtitles by remember { mutableStateOf(prefs.getBoolean(KEY_SUBTITLES, false)) }
+    var subtitles by remember { mutableStateOf(initial?.subtitles ?: prefs.getBoolean(KEY_SUBTITLES, false)) }
     // The clip is per video, so it resets for a new link.
-    var clipOn by remember(url) { mutableStateOf(false) }
-    var clipStart by remember(url) { mutableStateOf("") }
-    var clipEnd by remember(url) { mutableStateOf("") }
+    val initialClip = initial?.clip
+    var clipOn by remember(url) { mutableStateOf(initialClip != null) }
+    var clipStart by remember(url) { mutableStateOf(initialClip?.let { ClipRange.formatTime(it.startSeconds) } ?: "") }
+    var clipEnd by remember(url) { mutableStateOf(initialClip?.let { ClipRange.formatTime(it.endSeconds) } ?: "") }
     var state by remember(url) { mutableStateOf<PickerState>(PickerState.Loading) }
     // Bumped by "Try again" so the lookup below runs once more.
     var attempt by remember(url) { mutableIntStateOf(0) }

@@ -24,6 +24,7 @@ import com.saheed.videodownloader.formats.VideoMeta
 fun PickerSheet(
     url: String?,
     onDismiss: () -> Unit,
+    initial: DownloadExtras? = null,
     onPick: (url: String, meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit,
 ) {
     // skipPartiallyExpanded: open the sheet fully straight away instead of half-height first.
@@ -46,7 +47,7 @@ fun PickerSheet(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             } else {
-                FormatPicker(url) { meta, option, extras -> onPick(url, meta, option, extras) }
+                FormatPicker(url, initial) { meta, option, extras -> onPick(url, meta, option, extras) }
             }
         }
     }

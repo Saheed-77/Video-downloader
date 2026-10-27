@@ -3,6 +3,9 @@ package com.saheed.videodownloader.download
 import android.content.Context
 import android.util.Log
 import androidx.work.WorkManager
+import com.saheed.videodownloader.formats.DownloadExtras
+import com.saheed.videodownloader.formats.QualityOption
+import com.saheed.videodownloader.formats.VideoMeta
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -75,11 +78,27 @@ object DownloadStore {
      * Used by the Downloads tab and the notification's Retry button.
      */
     fun retry(context: Context, id: String) {
-        val old = find(id) ?: return
+        val old = replace(context, id) ?: return
+        DownloadWorker.enqueue(context, old.url, old.title, old.thumbnailUrl, old.toOption(), old.toExtras())
+    }
+
+    /**
+     * "Change quality": stops download [id] if it's still running and starts the same video again
+     * with the newly picked [option] and [extras], as a new row replacing the old one.
+     */
+    fun changeQuality(context: Context, id: String, meta: VideoMeta, option: QualityOption, extras: DownloadExtras) {
+        val old = replace(context, id) ?: return
+        DownloadWorker.enqueue(context, old.url, meta.title, meta.thumbnailUrl ?: old.thumbnailUrl, option, extras)
+    }
+
+    /** Stops [id] if active, removes its row and its old result notification; returns the old row. */
+    private fun replace(context: Context, id: String): DownloadRecord? {
+        val old = find(id) ?: return null
+        if (old.isActive) WorkManager.getInstance(context).cancelWorkById(UUID.fromString(id))
         remove(id)
         // The old "Download failed" notification is out of date now.
         Notifications.cancel(context, Notifications.resultId(id))
-        DownloadWorker.enqueue(context, old.url, old.title, old.thumbnailUrl, old.toOption(), old.toExtras())
+        return old
     }
 
     /**

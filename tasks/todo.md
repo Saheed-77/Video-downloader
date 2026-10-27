@@ -35,6 +35,8 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [ ] **Checkpoint:** review Downloads
 - [x] U5: Subtitles — English only (Saheed chose, avoids YouTube "too many requests"); real subtitles, not auto-captions — checked on the S24 (English mov_text track confirmed)
 - [x] U6: Clip a section — checked on the S24 (1:00–1:30 at 720p gave a 30.0 s H.264 MP4 with subtitles)
+- [ ] U6 fix: clip subtitles start from 0:00 of the full video, need shifting — ffmpeg shift options give wrong times; waiting for Saheed to choose the approach
+- [x] U6b: Change quality (running and cancelled/failed cards) — build + tests pass, phone check pending
 - [ ] U7: Playlist download
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — tests, lint, test-matrix rows, docs

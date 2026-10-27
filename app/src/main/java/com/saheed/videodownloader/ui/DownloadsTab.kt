@@ -48,6 +48,7 @@ import com.saheed.videodownloader.download.DownloadStatus
 import com.saheed.videodownloader.download.DownloadStore
 import com.saheed.videodownloader.download.FileActions
 import com.saheed.videodownloader.formats.QualityOption
+import com.saheed.videodownloader.share.PickerSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -57,6 +58,8 @@ fun DownloadsTab() {
     val context = LocalContext.current
     val records by DownloadStore.records.collectAsState()
     val progress by DownloadStore.progress.collectAsState()
+    // The row whose quality is being changed; non-null while the quality sheet is open.
+    var changing by remember { mutableStateOf<DownloadRecord?>(null) }
 
     // Once, when the tab opens: fix up rows left "Downloading" by a download the phone killed.
     LaunchedEffect(Unit) {
@@ -76,13 +79,21 @@ fun DownloadsTab() {
         item { Text("Downloads", style = MaterialTheme.typography.headlineMedium) }
         // key: lets Compose keep each card's state (like its open menu) with the right row.
         items(records, key = { it.id }) { record ->
-            DownloadCard(record, progress[record.id])
+            DownloadCard(record, progress[record.id], onChangeQuality = { changing = record })
+        }
+    }
+
+    changing?.let { record ->
+        // Same sheet as Home and Share, starting with this download's subtitles and clip choices.
+        PickerSheet(record.url, onDismiss = { changing = null }, initial = record.toExtras()) { _, meta, option, extras ->
+            changing = null
+            DownloadStore.changeQuality(context, record.id, meta, option, extras)
         }
     }
 }
 
 @Composable
-private fun DownloadCard(record: DownloadRecord, percent: Int?) {
+private fun DownloadCard(record: DownloadRecord, percent: Int?, onChangeQuality: () -> Unit) {
     val context = LocalContext.current
     val uri = record.uri?.toUri()
     val mime = record.mime
@@ -118,10 +129,13 @@ private fun DownloadCard(record: DownloadRecord, percent: Int?) {
                 )
             }
             when (record.status) {
-                DownloadStatus.QUEUED, DownloadStatus.RUNNING ->
+                DownloadStatus.QUEUED, DownloadStatus.RUNNING -> {
                     IconButton(onClick = { DownloadStore.cancel(context, record.id) }) {
                         Icon(painterResource(R.drawable.ic_close), contentDescription = "Cancel")
                     }
+                    // Keeps downloading until a new quality is actually picked.
+                    MoreMenu("Change quality" to onChangeQuality)
+                }
 
                 DownloadStatus.DONE -> {
                     if (canOpen) {
@@ -129,12 +143,15 @@ private fun DownloadCard(record: DownloadRecord, percent: Int?) {
                             Icon(painterResource(R.drawable.ic_share), contentDescription = "Share")
                         }
                     }
-                    MoreMenu(record.id)
+                    MoreMenu("Remove from list" to { DownloadStore.remove(record.id) })
                 }
 
                 DownloadStatus.FAILED, DownloadStatus.CANCELLED -> {
                     TextButton(onClick = { DownloadStore.retry(context, record.id) }) { Text("Retry") }
-                    MoreMenu(record.id)
+                    MoreMenu(
+                        "Change quality" to onChangeQuality,
+                        "Remove from list" to { DownloadStore.remove(record.id) },
+                    )
                 }
             }
         }
@@ -175,19 +192,21 @@ private fun Thumbnail(record: DownloadRecord) {
     }
 }
 
-/** The "⋮" button with "Remove from list". The file itself stays in Downloads. */
+/**
+ * The "⋮" button and its menu of (label, action) items. `vararg` = any number of arguments,
+ * like Java's `String...`. "Remove from list" leaves the file itself in Downloads.
+ */
 @Composable
-private fun MoreMenu(id: String) {
+private fun MoreMenu(vararg items: Pair<String, () -> Unit>) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) {
             Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More")
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(
-                text = { Text("Remove from list") },
-                onClick = { open = false; DownloadStore.remove(id) },
-            )
+            items.forEach { (label, action) ->
+                DropdownMenuItem(text = { Text(label) }, onClick = { open = false; action() })
+            }
         }
     }
 }

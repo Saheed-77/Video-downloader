@@ -79,7 +79,7 @@ object DownloadStore {
         remove(id)
         // The old "Download failed" notification is out of date now.
         Notifications.cancel(context, Notifications.resultId(id))
-        DownloadWorker.enqueue(context, old.url, old.title, old.thumbnailUrl, old.toOption())
+        DownloadWorker.enqueue(context, old.url, old.title, old.thumbnailUrl, old.toOption(), old.toExtras())
     }
 
     /**

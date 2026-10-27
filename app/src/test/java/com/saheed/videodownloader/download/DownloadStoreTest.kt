@@ -30,6 +30,7 @@ class DownloadStoreTest {
             uri = "content://media/external/downloads/42",
             mime = "video/mp4",
             sizeBytes = 45_000_000L,
+            subtitles = true,
         )
         assertEquals(done, DownloadRecord.fromJson(done.toJson()))
     }

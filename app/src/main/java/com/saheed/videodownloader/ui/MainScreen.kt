@@ -59,8 +59,8 @@ fun MainScreen() {
     ) { padding ->
         Box(Modifier.padding(padding)) {
             when (Tab.entries[tab]) {
-                Tab.HOME -> HomeTab { url, meta, option ->
-                    DownloadWorker.enqueue(context, url, meta.title, meta.thumbnailUrl, option)
+                Tab.HOME -> HomeTab { url, meta, option, extras ->
+                    DownloadWorker.enqueue(context, url, meta.title, meta.thumbnailUrl, option, extras)
                     tab = Tab.DOWNLOADS.ordinal
                 }
                 Tab.DOWNLOADS -> DownloadsTab()

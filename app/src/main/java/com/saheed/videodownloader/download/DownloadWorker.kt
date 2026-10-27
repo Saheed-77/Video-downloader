@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.QualityOption
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +35,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val title = inputData.getString(KEY_TITLE) ?: "video"
         val format = inputData.getString(KEY_FORMAT)
         val isAudio = inputData.getBoolean(KEY_AUDIO, false)
+        val extras = DownloadExtras(subtitles = inputData.getBoolean(KEY_SUBTITLES, false))
         val recordId = id.toString()
 
         // Each download gets its own cache folder, so finding the result and cleaning up is easy.
@@ -53,7 +55,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             // runInterruptible: if the worker is cancelled, the blocking yt-dlp call gets interrupted,
             // which makes youtubedl-android kill the yt-dlp process.
             val file = runInterruptible(Dispatchers.IO) {
-                Downloader.download(url, format, isAudio, workDir) { progress ->
+                Downloader.download(url, format, isAudio, extras, workDir) { progress ->
                     val percent = progress.toInt()
                     if (percent != lastShown) { // yt-dlp reports many times a second; update only on change
                         lastShown = percent
@@ -107,12 +109,20 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_TITLE = "title"
         private const val KEY_FORMAT = "format"
         private const val KEY_AUDIO = "audio"
+        private const val KEY_SUBTITLES = "subtitles"
 
         /**
          * Queues a download and adds it to the Downloads tab; it starts right away and survives
          * leaving the app.
          */
-        fun enqueue(context: Context, url: String, title: String, thumbnailUrl: String?, option: QualityOption) {
+        fun enqueue(
+            context: Context,
+            url: String,
+            title: String,
+            thumbnailUrl: String?,
+            option: QualityOption,
+            extras: DownloadExtras,
+        ) {
             val request = OneTimeWorkRequestBuilder<DownloadWorker>()
                 .setInputData(
                     workDataOf(
@@ -120,6 +130,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         KEY_TITLE to title,
                         KEY_FORMAT to option.format,
                         KEY_AUDIO to option.isAudio,
+                        KEY_SUBTITLES to extras.subtitles,
                     )
                 )
                 .build()
@@ -132,6 +143,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     label = option.label,
                     format = option.format,
                     isAudio = option.isAudio,
+                    subtitles = extras.subtitles,
                     status = DownloadStatus.QUEUED,
                     createdAt = System.currentTimeMillis(),
                 )

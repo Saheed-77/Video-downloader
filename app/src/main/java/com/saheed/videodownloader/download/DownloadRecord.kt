@@ -1,5 +1,6 @@
 package com.saheed.videodownloader.download
 
+import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.QualityOption
 import org.json.JSONObject
 
@@ -17,6 +18,7 @@ data class DownloadRecord(
     val label: String,
     val format: String?,
     val isAudio: Boolean,
+    val subtitles: Boolean = false,
     val status: DownloadStatus,
     val createdAt: Long,
     /** The saved file (content:// address), once DONE. Null on Android 7–9. */
@@ -31,6 +33,8 @@ data class DownloadRecord(
     /** The quality row this download was started with (used by Retry). */
     fun toOption() = QualityOption(label, format, isAudio)
 
+    fun toExtras() = DownloadExtras(subtitles = subtitles)
+
     fun toJson(): JSONObject = JSONObject()
         .put("id", id)
         .put("url", url)
@@ -39,6 +43,7 @@ data class DownloadRecord(
         .put("label", label)
         .put("format", format)
         .put("isAudio", isAudio)
+        .put("subtitles", subtitles)
         .put("status", status.name)
         .put("createdAt", createdAt)
         .put("uri", uri)
@@ -55,6 +60,7 @@ data class DownloadRecord(
             label = json.getString("label"),
             format = json.stringOrNull("format"),
             isAudio = json.optBoolean("isAudio"),
+            subtitles = json.optBoolean("subtitles"),
             status = DownloadStatus.valueOf(json.getString("status")),
             createdAt = json.getLong("createdAt"),
             uri = json.stringOrNull("uri"),

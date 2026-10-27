@@ -2,6 +2,7 @@ package com.saheed.videodownloader.share
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -41,10 +43,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import coil3.compose.AsyncImage
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.R
 import com.saheed.videodownloader.download.ErrorMapper
+import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.FormatParser
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.formats.VideoMeta
@@ -65,14 +69,19 @@ private sealed interface PickerState {
 }
 
 private val thumbnailShape = RoundedCornerShape(12.dp)
+private const val PREFS = "picker"
+private const val KEY_SUBTITLES = "subtitles"
 
 /**
  * Looks up [url] with yt-dlp, shows the video's thumbnail and details, and lists the qualities
- * it really has. Tapping a row calls [onPick] with the video's details and the chosen quality.
+ * it really has. Tapping a row calls [onPick] with the video's details, the chosen quality and the extras.
  */
 @Composable
-fun FormatPicker(url: String, onPick: (meta: VideoMeta, option: QualityOption) -> Unit) {
+fun FormatPicker(url: String, onPick: (meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit) {
     val context = LocalContext.current.applicationContext
+    // The Subtitles chip remembers its last setting (saved in SharedPreferences).
+    val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
+    var subtitles by remember { mutableStateOf(prefs.getBoolean(KEY_SUBTITLES, false)) }
     var state by remember(url) { mutableStateOf<PickerState>(PickerState.Loading) }
     // Bumped by "Try again" so the lookup below runs once more.
     var attempt by remember(url) { mutableIntStateOf(0) }
@@ -121,11 +130,17 @@ fun FormatPicker(url: String, onPick: (meta: VideoMeta, option: QualityOption) -
             // The header is its first item, so everything scrolls together.
             LazyColumn {
                 item { VideoHeader(s.meta) }
+                item {
+                    SubtitlesChip(subtitles) {
+                        subtitles = it
+                        prefs.edit { putBoolean(KEY_SUBTITLES, it) }
+                    }
+                }
                 item { SectionLabel("Video") }
-                items(video) { option -> QualityRow(option) { onPick(s.meta, option) } }
+                items(video) { option -> QualityRow(option) { onPick(s.meta, option, DownloadExtras(subtitles)) } }
                 if (audio.isNotEmpty()) {
                     item { SectionLabel("Audio") }
-                    items(audio) { option -> QualityRow(option) { onPick(s.meta, option) } }
+                    items(audio) { option -> QualityRow(option) { onPick(s.meta, option, DownloadExtras()) } }
                 }
             }
         }
@@ -185,6 +200,28 @@ private fun VideoHeader(meta: VideoMeta) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** On/off chip for embedding subtitles into the video (MP3 ignores it). */
+@Composable
+private fun SubtitlesChip(selected: Boolean, onChange: (Boolean) -> Unit) {
+    Column(Modifier.padding(top = 12.dp)) {
+        FilterChip(
+            selected = selected,
+            onClick = { onChange(!selected) },
+            label = { Text("Subtitles") },
+            leadingIcon = {
+                Icon(painterResource(R.drawable.ic_subtitles), contentDescription = null, Modifier.size(18.dp))
+            },
+        )
+        if (selected) {
+            Text(
+                "English subtitles are added to the video when it has them.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

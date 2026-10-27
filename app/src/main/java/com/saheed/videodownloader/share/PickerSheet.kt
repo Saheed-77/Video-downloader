@@ -11,6 +11,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.formats.VideoMeta
 
@@ -23,7 +24,7 @@ import com.saheed.videodownloader.formats.VideoMeta
 fun PickerSheet(
     url: String?,
     onDismiss: () -> Unit,
-    onPick: (url: String, meta: VideoMeta, option: QualityOption) -> Unit,
+    onPick: (url: String, meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit,
 ) {
     // skipPartiallyExpanded: open the sheet fully straight away instead of half-height first.
     ModalBottomSheet(
@@ -45,7 +46,7 @@ fun PickerSheet(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             } else {
-                FormatPicker(url) { meta, option -> onPick(url, meta, option) }
+                FormatPicker(url) { meta, option, extras -> onPick(url, meta, option, extras) }
             }
         }
     }

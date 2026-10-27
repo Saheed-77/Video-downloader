@@ -30,8 +30,8 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] U1: Bottom tabs, Home (Paste + copied-link card), Settings, shared picker sheet — Downloads tab is added in U3; Coil 3.5.0 (3.6 needs compileSdk 37)
 - [x] U2: Picker redesign — thumbnail, title, channel, duration, quality badges, Try again
 - [ ] **Checkpoint:** review the new look on the S24
-- [x] U3: Download records + Downloads tab (progress, Cancel, Open, Share, Retry, Remove) — phone check pending
-- [ ] U4: Notification actions — Share (finished), Retry (failed)
+- [x] U3: Download records + Downloads tab (progress, Cancel, Open, Share, Retry, Remove) — checked on the S24
+- [x] U4: Notification actions — Share (finished), Retry (failed) — phone check pending
 - [ ] **Checkpoint:** review Downloads
 - [ ] U5: Subtitles
 - [ ] U6: Clip a section

@@ -70,10 +70,15 @@ object DownloadStore {
         update(id) { if (it.isActive) it.copy(status = DownloadStatus.CANCELLED) else it }
     }
 
-    /** Starts the same download again as a new row, replacing the failed/cancelled one. */
+    /**
+     * Starts the same download again as a new row, replacing the failed/cancelled one.
+     * Used by the Downloads tab and the notification's Retry button.
+     */
     fun retry(context: Context, id: String) {
         val old = find(id) ?: return
         remove(id)
+        // The old "Download failed" notification is out of date now.
+        Notifications.cancel(context, Notifications.resultId(id))
         DownloadWorker.enqueue(context, old.url, old.title, old.thumbnailUrl, old.toOption())
     }
 

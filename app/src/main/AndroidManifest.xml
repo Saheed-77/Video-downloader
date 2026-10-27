@@ -47,5 +47,10 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
+        <!-- The Retry button on "Download failed" notifications. Not exported: only our own
+             notifications can trigger it. -->
+        <receiver
+            android:name=".download.RetryReceiver"
+            android:exported="false" />
     </application>
 </manifest>

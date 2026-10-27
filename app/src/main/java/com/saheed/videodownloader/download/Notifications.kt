@@ -14,12 +14,18 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.saheed.videodownloader.R
+import java.util.UUID
 
 /** Builds and shows the download notifications. */
 object Notifications {
 
     private const val CHANNEL_PROGRESS = "progress"
     private const val CHANNEL_RESULT = "result"
+
+    /** Notification ids, worked out from the download's id so any part of the app can find them. */
+    fun progressId(recordId: String) = UUID.fromString(recordId).hashCode()
+    fun resultId(recordId: String) = progressId(recordId) + 1
 
     /**
      * Android 8+ groups notifications into *channels* the user can mute separately in Settings.
@@ -51,30 +57,41 @@ object Notifications {
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cancel", cancel)
             .build()
 
-    /** "Download complete" — tapping opens the file (or the Downloads app on Android 7–9). */
+    /**
+     * "Download complete" — tapping opens the file (or the Downloads app on Android 7–9).
+     * Has a Share button when there's a file address to share.
+     */
     fun complete(context: Context, id: Int, title: String, uri: Uri?, mimeType: String) {
         val open = if (uri != null) {
-            Intent(Intent.ACTION_VIEW)
-                .setDataAndType(uri, mimeType)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            FileActions.openIntent(uri, mimeType)
         } else {
             Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         // A PendingIntent is a "tap action" handed to the system to run on our behalf later.
         val tap = PendingIntent.getActivity(context, id, open, PendingIntent.FLAG_IMMUTABLE)
-        show(
-            context, id,
-            NotificationCompat.Builder(context, CHANNEL_RESULT)
-                .setSmallIcon(android.R.drawable.stat_sys_download_done)
-                .setContentTitle("Download complete")
-                .setContentText(title)
-                .setContentIntent(tap)
-                .setAutoCancel(true)
-                .build()
-        )
+        val builder = NotificationCompat.Builder(context, CHANNEL_RESULT)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle("Download complete")
+            .setContentText(title)
+            .setContentIntent(tap)
+            .setAutoCancel(true)
+        if (uri != null) {
+            val share = PendingIntent.getActivity(
+                context, id, FileActions.shareIntent(uri, mimeType),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+            builder.addAction(R.drawable.ic_share, "Share", share)
+        }
+        show(context, id, builder.build())
     }
 
-    fun failed(context: Context, id: Int, title: String, message: String) {
+    /** "Download failed" with the friendly reason and a Retry button for download [recordId]. */
+    fun failed(context: Context, id: Int, title: String, message: String, recordId: String) {
+        val retry = PendingIntent.getBroadcast(
+            context, id,
+            Intent(context, RetryReceiver::class.java).putExtra(RetryReceiver.EXTRA_ID, recordId),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         show(
             context, id,
             NotificationCompat.Builder(context, CHANNEL_RESULT)
@@ -83,6 +100,7 @@ object Notifications {
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText("$title\n$message"))
                 .setAutoCancel(true)
+                .addAction(R.drawable.ic_refresh, "Retry", retry)
                 .build()
         )
     }

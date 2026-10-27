@@ -23,8 +23,8 @@ import java.io.File
  */
 class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
-    private val notificationId = id.hashCode()
-    private val resultNotificationId = notificationId + 1
+    private val notificationId = Notifications.progressId(id.toString())
+    private val resultNotificationId = Notifications.resultId(id.toString())
 
     // The notification's Cancel button: asks WorkManager to stop this worker.
     private val cancelIntent get() = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
@@ -80,7 +80,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             Log.e(TAG, "Download failed: $url", e)
             val message = ErrorMapper.toMessage(e.message)
             DownloadStore.update(recordId) { it.copy(status = DownloadStatus.FAILED, error = message) }
-            Notifications.failed(applicationContext, resultNotificationId, title, message)
+            Notifications.failed(applicationContext, resultNotificationId, title, message, recordId)
             Result.failure()
         } finally {
             // Removes partial files too. Also clear the progress notification in case a last

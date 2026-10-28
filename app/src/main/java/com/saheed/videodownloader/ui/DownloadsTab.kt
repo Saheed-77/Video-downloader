@@ -133,8 +133,9 @@ private fun DownloadCard(record: DownloadRecord, percent: Int?, onChangeQuality:
                     IconButton(onClick = { DownloadStore.cancel(context, record.id) }) {
                         Icon(painterResource(R.drawable.ic_close), contentDescription = "Cancel")
                     }
-                    // Keeps downloading until a new quality is actually picked.
-                    MoreMenu("Change quality" to onChangeQuality)
+                    // Keeps downloading until a new quality is actually picked. Not for a waiting
+                    // playlist video: stopping it would also stop the videos queued after it.
+                    if (record.group == null) MoreMenu("Change quality" to onChangeQuality)
                 }
 
                 DownloadStatus.DONE -> {

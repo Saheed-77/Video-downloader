@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.formats.DownloadExtras
+import com.saheed.videodownloader.formats.Playlist
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.formats.VideoMeta
 
@@ -25,6 +26,7 @@ fun PickerSheet(
     url: String?,
     onDismiss: () -> Unit,
     initial: DownloadExtras? = null,
+    onPickPlaylist: (playlist: Playlist, option: QualityOption, extras: DownloadExtras) -> Unit = { _, _, _ -> },
     onPick: (url: String, meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit,
 ) {
     // skipPartiallyExpanded: open the sheet fully straight away instead of half-height first.
@@ -47,7 +49,7 @@ fun PickerSheet(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             } else {
-                FormatPicker(url, initial) { meta, option, extras -> onPick(url, meta, option, extras) }
+                FormatPicker(url, initial, onPickPlaylist) { meta, option, extras -> onPick(url, meta, option, extras) }
             }
         }
     }

@@ -23,6 +23,8 @@ data class DownloadRecord(
     /** The clipped part in seconds, or both null for the whole video. */
     val clipStart: Int? = null,
     val clipEnd: Int? = null,
+    /** Shared by the videos of one playlist download; null for a single video. */
+    val group: String? = null,
     val status: DownloadStatus,
     val createdAt: Long,
     /** The saved file (content:// address), once DONE. Null on Android 7–9. */
@@ -53,6 +55,7 @@ data class DownloadRecord(
         .put("subtitles", subtitles)
         .put("clipStart", clipStart)
         .put("clipEnd", clipEnd)
+        .put("group", group)
         .put("status", status.name)
         .put("createdAt", createdAt)
         .put("uri", uri)
@@ -72,6 +75,7 @@ data class DownloadRecord(
             subtitles = json.optBoolean("subtitles"),
             clipStart = if (json.has("clipStart")) json.getInt("clipStart") else null,
             clipEnd = if (json.has("clipEnd")) json.getInt("clipEnd") else null,
+            group = json.stringOrNull("group"),
             status = DownloadStatus.valueOf(json.getString("status")),
             createdAt = json.getLong("createdAt"),
             uri = json.stringOrNull("uri"),

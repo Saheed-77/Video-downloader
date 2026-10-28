@@ -6,17 +6,20 @@ import android.os.Build
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DownloadExtras
+import com.saheed.videodownloader.formats.Playlist
 import com.saheed.videodownloader.formats.QualityOption
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import java.io.File
+import java.util.UUID
 
 /**
  * Runs one download in the background with *WorkManager* (Android's job scheduler for work that
@@ -89,7 +92,10 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             val message = ErrorMapper.toMessage(e.message)
             DownloadStore.update(recordId) { it.copy(status = DownloadStatus.FAILED, error = message) }
             Notifications.failed(applicationContext, resultNotificationId, title, message, recordId)
-            Result.failure()
+            // "Success" for WorkManager even though the download failed: playlist videos run as a
+            // chain, and a failed link would stop every video after it. The failure is already
+            // shown in the Downloads tab and the notification.
+            Result.success()
         } finally {
             // Removes partial files too. Also clear the progress notification in case a last
             // progress update raced with the end of the download.
@@ -131,6 +137,37 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             option: QualityOption,
             extras: DownloadExtras,
         ) {
+            val (request, record) = newDownload(url, title, thumbnailUrl, option, extras, group = null)
+            DownloadStore.add(record)
+            WorkManager.getInstance(context).enqueue(request)
+        }
+
+        /**
+         * Queues every video of [playlist] with the same quality, as a *chain*: WorkManager starts
+         * each one after the one before has finished, so the phone downloads one video at a time.
+         * They share a group id, so cancelling one marks the rest of the chain cancelled too.
+         */
+        fun enqueuePlaylist(context: Context, playlist: Playlist, option: QualityOption, extras: DownloadExtras) {
+            if (playlist.entries.isEmpty()) return
+            val group = UUID.randomUUID().toString()
+            val downloads = playlist.entries.map { newDownload(it.url, it.title, it.thumbnailUrl, option, extras, group) }
+            // The list shows newest first, so add them in reverse: the first video ends up on top.
+            DownloadStore.addAll(downloads.map { it.second }.reversed())
+            val requests = downloads.map { it.first }
+            requests.drop(1)
+                .fold(WorkManager.getInstance(context).beginWith(requests.first())) { chain, next -> chain.then(next) }
+                .enqueue()
+        }
+
+        /** The WorkManager job and its Downloads-tab row, not yet queued or saved. */
+        private fun newDownload(
+            url: String,
+            title: String,
+            thumbnailUrl: String?,
+            option: QualityOption,
+            extras: DownloadExtras,
+            group: String?,
+        ): Pair<OneTimeWorkRequest, DownloadRecord> {
             val request = OneTimeWorkRequestBuilder<DownloadWorker>()
                 .setInputData(
                     workDataOf(
@@ -145,23 +182,21 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     )
                 )
                 .build()
-            DownloadStore.add(
-                DownloadRecord(
-                    id = request.id.toString(),
-                    url = url,
-                    title = title,
-                    thumbnailUrl = thumbnailUrl,
-                    label = option.label,
-                    format = option.format,
-                    isAudio = option.isAudio,
-                    subtitles = extras.subtitles,
-                    clipStart = extras.clip?.startSeconds,
-                    clipEnd = extras.clip?.endSeconds,
-                    status = DownloadStatus.QUEUED,
-                    createdAt = System.currentTimeMillis(),
-                )
+            return request to DownloadRecord(
+                id = request.id.toString(),
+                url = url,
+                title = title,
+                thumbnailUrl = thumbnailUrl,
+                label = option.label,
+                format = option.format,
+                isAudio = option.isAudio,
+                subtitles = extras.subtitles,
+                clipStart = extras.clip?.startSeconds,
+                clipEnd = extras.clip?.endSeconds,
+                group = group,
+                status = DownloadStatus.QUEUED,
+                createdAt = System.currentTimeMillis(),
             )
-            WorkManager.getInstance(context).enqueue(request)
         }
     }
 }

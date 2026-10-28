@@ -33,6 +33,7 @@ class DownloadStoreTest {
             subtitles = true,
             clipStart = 90,
             clipEnd = 165,
+            group = "playlist-1",
         )
         assertEquals(done, DownloadRecord.fromJson(done.toJson()))
     }
@@ -68,6 +69,33 @@ class DownloadStoreTest {
         DownloadStore.add(record("old"))
         DownloadStore.add(record("new"))
         assertEquals(listOf("new", "old"), DownloadStore.records.value.map { it.id })
+    }
+
+    @Test
+    fun cancellingAPlaylistVideoCancelsTheOnesStillWaiting() {
+        DownloadStore.init(tmp.newFile("downloads.json"))
+        DownloadStore.addAll(
+            listOf(
+                record("p1", DownloadStatus.DONE).copy(group = "g"),
+                record("p2", DownloadStatus.RUNNING).copy(group = "g"),
+                record("p3").copy(group = "g"),
+                record("other"),
+            )
+        )
+        DownloadStore.cancelWaitingInGroup("g")
+        val status = DownloadStore.records.value.associate { it.id to it.status }
+        assertEquals(DownloadStatus.DONE, status["p1"])
+        assertEquals(DownloadStatus.RUNNING, status["p2"]) // cancelled separately by cancel()
+        assertEquals(DownloadStatus.CANCELLED, status["p3"])
+        assertEquals(DownloadStatus.QUEUED, status["other"])
+    }
+
+    @Test
+    fun addAllKeepsTheGivenOrderOnTop() {
+        DownloadStore.init(tmp.newFile("downloads.json"))
+        DownloadStore.add(record("old"))
+        DownloadStore.addAll(listOf(record("a"), record("b")))
+        assertEquals(listOf("a", "b", "old"), DownloadStore.records.value.map { it.id })
     }
 
     @Test

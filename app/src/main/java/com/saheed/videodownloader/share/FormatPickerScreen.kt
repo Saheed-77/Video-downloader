@@ -56,6 +56,7 @@ import com.saheed.videodownloader.download.ErrorMapper
 import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.FormatParser
+import com.saheed.videodownloader.formats.Playlist
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.formats.VideoMeta
 import com.saheed.videodownloader.update.EngineUpdater
@@ -65,12 +66,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * The three things this screen can show. A `sealed interface` is a closed set of types,
+ * The things this screen can show. A `sealed interface` is a closed set of types,
  * so `when` below must handle each one (like a Java sealed interface + switch).
  */
 private sealed interface PickerState {
     data object Loading : PickerState
     data class Loaded(val meta: VideoMeta, val options: List<QualityOption>) : PickerState
+    data class PlaylistLoaded(val playlist: Playlist) : PickerState
     data class Failed(val message: String) : PickerState
 }
 
@@ -82,11 +84,13 @@ private const val KEY_SUBTITLES = "subtitles"
  * Looks up [url] with yt-dlp, shows the video's thumbnail and details, and lists the qualities
  * it really has. Tapping a row calls [onPick] with the video's details, the chosen quality and the extras.
  * [initial]: the chips and clip times to start with (used by "Change quality").
+ * A whole-playlist link shows the playlist instead, and a tap calls [onPickPlaylist].
  */
 @Composable
 fun FormatPicker(
     url: String,
     initial: DownloadExtras? = null,
+    onPickPlaylist: (playlist: Playlist, option: QualityOption, extras: DownloadExtras) -> Unit = { _, _, _ -> },
     onPick: (meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit,
 ) {
     val context = LocalContext.current.applicationContext
@@ -109,7 +113,19 @@ fun FormatPicker(
             return@LaunchedEffect
         }
         state = PickerState.Loading
-        state = try {
+        state = if (Playlist.isPlaylistUrl(url)) try {
+            val playlist = withContext(Dispatchers.IO) {
+                EngineUpdater.updateIfDue(context)
+                // -J --flat-playlist: just the list of videos as JSON, without looking each one up.
+                val request = YoutubeDLRequest(url).addOption("-J").addOption("--flat-playlist")
+                val json = EngineUpdater.useEngine { YoutubeDL.getInstance().execute(request).out }
+                Playlist.parse(json)
+            }
+            if (playlist.entries.isEmpty()) PickerState.Failed("This playlist has no videos that can be downloaded.")
+            else PickerState.PlaylistLoaded(playlist)
+        } catch (e: Exception) {
+            PickerState.Failed(ErrorMapper.toMessage(e.message))
+        } else try {
             val info = withContext(Dispatchers.IO) {
                 // Weekly yt-dlp update check before every lookup (covers links shared to the app).
                 // Runs first, so the lookup below already uses the new engine.
@@ -139,6 +155,31 @@ fun FormatPicker(
         }
 
         is PickerState.Failed -> ErrorCard(s.message, onRetry = { attempt++ })
+
+        is PickerState.PlaylistLoaded -> {
+            val (audio, video) = Playlist.QUALITY_OPTIONS.partition { it.isAudio }
+            LazyColumn {
+                item { PlaylistHeader(s.playlist) }
+                item {
+                    // No Clip for playlists: one start/end time can't fit every video.
+                    Row(Modifier.padding(top = 12.dp)) {
+                        OptionChip("Subtitles", R.drawable.ic_subtitles, subtitles) {
+                            subtitles = it
+                            prefs.edit { putBoolean(KEY_SUBTITLES, it) }
+                        }
+                    }
+                    if (subtitles) Hint("English subtitles are added to each video that has them.")
+                }
+                item { SectionLabel("Video (up to)") }
+                items(video) { option ->
+                    QualityRow(option, enabled = true) { onPickPlaylist(s.playlist, option, DownloadExtras(subtitles)) }
+                }
+                item { SectionLabel("Audio") }
+                items(audio) { option ->
+                    QualityRow(option, enabled = true) { onPickPlaylist(s.playlist, option, DownloadExtras()) }
+                }
+            }
+        }
 
         is PickerState.Loaded -> {
             val (audio, video) = s.options.partition { it.isAudio }
@@ -188,45 +229,67 @@ fun FormatPicker(
     }
 }
 
+/** 16:9 rounded thumbnail (film icon until it loads) with an optional pill in the corner. */
+@Composable
+private fun Thumbnail(url: String?, pill: String?) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(16f / 9f)
+            .clip(thumbnailShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Film icon underneath; the thumbnail covers it once Coil has downloaded it.
+        Icon(
+            painterResource(R.drawable.ic_movie),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(40.dp),
+        )
+        if (url != null) {
+            AsyncImage(
+                model = url,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        pill?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+        }
+    }
+}
+
+/** First video's thumbnail with a "24 videos" pill, the playlist title, and how it downloads. */
+@Composable
+private fun PlaylistHeader(playlist: Playlist) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Thumbnail(playlist.entries.first().thumbnailUrl, pill = "${playlist.entries.size} videos")
+        Spacer(Modifier.size(4.dp))
+        Text(playlist.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(
+            if (playlist.isCut) "Only the first ${playlist.entries.size} of ${playlist.totalCount} videos. They download one after another."
+            else "Playlist. The videos download one after another.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 @Composable
 private fun VideoHeader(meta: VideoMeta) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-                .clip(thumbnailShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            // Film icon underneath; the thumbnail covers it once Coil has downloaded it.
-            Icon(
-                painterResource(R.drawable.ic_movie),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(40.dp),
-            )
-            if (meta.thumbnailUrl != null) {
-                AsyncImage(
-                    model = meta.thumbnailUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-            meta.durationText?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp)
-                        .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
-        }
+        Thumbnail(meta.thumbnailUrl, pill = meta.durationText)
         Spacer(Modifier.size(4.dp))
         Text(
             meta.title,

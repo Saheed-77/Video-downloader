@@ -51,7 +51,11 @@ object DownloadStore {
     }
 
     @Synchronized
-    fun add(record: DownloadRecord) = save((listOf(record) + _records.value).take(MAX_RECORDS))
+    fun add(record: DownloadRecord) = addAll(listOf(record))
+
+    /** Adds several rows with one save; [records] end up on top in the order given. */
+    @Synchronized
+    fun addAll(records: List<DownloadRecord>) = save((records + _records.value).take(MAX_RECORDS))
 
     /** Applies [change] to the record with [id], if it's still in the list. */
     @Synchronized
@@ -69,9 +73,20 @@ object DownloadStore {
 
     /** Stops an active download. Marked Cancelled straight away, in case it hadn't started yet. */
     fun cancel(context: Context, id: String) {
+        val record = find(id)
         WorkManager.getInstance(context).cancelWorkById(UUID.fromString(id))
         update(id) { if (it.isActive) it.copy(status = DownloadStatus.CANCELLED) else it }
+        // WorkManager also cancels the playlist videos waiting after this one; show that.
+        record?.group?.let { cancelWaitingInGroup(it) }
     }
+
+    /** Marks the still-waiting videos of playlist download [group] as cancelled. */
+    @Synchronized
+    fun cancelWaitingInGroup(group: String) = save(
+        _records.value.map {
+            if (it.group == group && it.status == DownloadStatus.QUEUED) it.copy(status = DownloadStatus.CANCELLED) else it
+        }
+    )
 
     /**
      * Starts the same download again as a new row, replacing the failed/cancelled one.

@@ -37,7 +37,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] U6: Clip a section — checked on the S24 (1:00–1:30 at 720p gave a 30.0 s H.264 MP4 with subtitles)
 - [x] U6 fix: no subtitles on clips (Saheed chose; yt-dlp doesn't cut subtitles and ffmpeg's shift options gave wrong times) — Subtitles chip greys out while Clip is on
 - [x] U6b: Change quality (running and cancelled/failed cards) — build + tests pass, phone check pending
-- [ ] U7: Playlist download
+- [x] U7: Playlist download — build + tests pass, phone check pending (cancel stops the videos still waiting; Change quality hidden on active playlist videos)
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — tests, lint, test-matrix rows, docs
 

@@ -24,7 +24,15 @@ class ShareActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 // Swiping the sheet away closes the activity and returns to the other app.
-                PickerSheet(url, onDismiss = { finish() }) { pickedUrl, meta, option, extras ->
+                PickerSheet(
+                    url,
+                    onDismiss = { finish() },
+                    onPickPlaylist = { playlist, option, extras ->
+                        DownloadWorker.enqueuePlaylist(this, playlist, option, extras)
+                        Toast.makeText(this, "Downloading ${playlist.entries.size} videos…", Toast.LENGTH_SHORT).show()
+                        finish()
+                    },
+                ) { pickedUrl, meta, option, extras ->
                     // Hand the download to the background worker and get out of the way.
                     DownloadWorker.enqueue(this, pickedUrl, meta.title, meta.thumbnailUrl, option, extras)
                     Toast.makeText(this, "Downloading ${option.label}…", Toast.LENGTH_SHORT).show()

@@ -62,6 +62,8 @@ Install over **wireless debugging** (PC hotspot) or Android Studio **Run ▶**; 
 | P16 | Playlist cancel | During a playlist download, ✕ on the running video → it and the waiting ones show "Cancelled" | ✅ 28 Oct: running + 4 waiting → all Cancelled, nothing restarted |
 | P17 | Video inside a playlist | Share a video opened from inside a playlist (watch?v=…&list=…) → just that one video, as before | |
 | P18 | Cancel all / Retry all | Downloads tab buttons: Retry all restarts every failed/cancelled one in order (one at a time); Cancel all stops every running/waiting one | ✅ 28 Oct: 5 cancelled → Retry all (1 running, 4 waiting) → Cancel all (all Cancelled) |
+| P19 | Download another quality | ⋮ on any card → **Download another quality** → pick: a new card starts, the original stays | ✅ 28 Oct: finished 360p → new 720p card, 360p kept |
+| P20 | Parallel downloads | Start two separate downloads → both run at once, each with its own notification | ✅ 28 Oct: two 1080p TEDx talks at the same time (27% / 29% …); Cancel all stopped both |
 
 ## 4. If something fails
 

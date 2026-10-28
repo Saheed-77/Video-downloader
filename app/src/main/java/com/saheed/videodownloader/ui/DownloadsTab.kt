@@ -47,6 +47,7 @@ import com.saheed.videodownloader.R
 import com.saheed.videodownloader.download.DownloadRecord
 import com.saheed.videodownloader.download.DownloadStatus
 import com.saheed.videodownloader.download.DownloadStore
+import com.saheed.videodownloader.download.DownloadWorker
 import com.saheed.videodownloader.download.FileActions
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.share.PickerSheet
@@ -59,8 +60,8 @@ fun DownloadsTab() {
     val context = LocalContext.current
     val records by DownloadStore.records.collectAsState()
     val progress by DownloadStore.progress.collectAsState()
-    // The row whose quality is being changed; non-null while the quality sheet is open.
-    var changing by remember { mutableStateOf<DownloadRecord?>(null) }
+    // Non-null while the quality sheet is open for a row ("Change quality" or "Download another quality").
+    var picking by remember { mutableStateOf<QualityPick?>(null) }
 
     // Once, when the tab opens: fix up rows left "Downloading" by a download the phone killed.
     LaunchedEffect(Unit) {
@@ -95,21 +96,39 @@ fun DownloadsTab() {
         }
         // key: lets Compose keep each card's state (like its open menu) with the right row.
         items(records, key = { it.id }) { record ->
-            DownloadCard(record, progress[record.id], onChangeQuality = { changing = record })
+            DownloadCard(
+                record,
+                progress[record.id],
+                onChangeQuality = { picking = QualityPick(record, replaceOld = true) },
+                onAnotherQuality = { picking = QualityPick(record, replaceOld = false) },
+            )
         }
     }
 
-    changing?.let { record ->
+    picking?.let { (record, replaceOld) ->
         // Same sheet as Home and Share, starting with this download's subtitles and clip choices.
-        PickerSheet(record.url, onDismiss = { changing = null }, initial = record.toExtras()) { _, meta, option, extras ->
-            changing = null
-            DownloadStore.changeQuality(context, record.id, meta, option, extras)
+        PickerSheet(record.url, onDismiss = { picking = null }, initial = record.toExtras()) { _, meta, option, extras ->
+            picking = null
+            if (replaceOld) {
+                DownloadStore.changeQuality(context, record.id, meta, option, extras)
+            } else {
+                // A separate download next to the old one, which keeps going (or stays saved).
+                DownloadWorker.enqueue(context, record.url, meta.title, meta.thumbnailUrl ?: record.thumbnailUrl, option, extras)
+            }
         }
     }
 }
 
+/** Which row the quality sheet is for, and whether the pick replaces it or is added next to it. */
+private data class QualityPick(val record: DownloadRecord, val replaceOld: Boolean)
+
 @Composable
-private fun DownloadCard(record: DownloadRecord, percent: Int?, onChangeQuality: () -> Unit) {
+private fun DownloadCard(
+    record: DownloadRecord,
+    percent: Int?,
+    onChangeQuality: () -> Unit,
+    onAnotherQuality: () -> Unit,
+) {
     val context = LocalContext.current
     val uri = record.uri?.toUri()
     val mime = record.mime
@@ -151,7 +170,11 @@ private fun DownloadCard(record: DownloadRecord, percent: Int?, onChangeQuality:
                     }
                     // Keeps downloading until a new quality is actually picked. Not for a waiting
                     // playlist video: stopping it would also stop the videos queued after it.
-                    if (record.group == null) MoreMenu("Change quality" to onChangeQuality)
+                    if (record.group == null) {
+                        MoreMenu("Change quality" to onChangeQuality, "Download another quality" to onAnotherQuality)
+                    } else {
+                        MoreMenu("Download another quality" to onAnotherQuality)
+                    }
                 }
 
                 DownloadStatus.DONE -> {
@@ -160,13 +183,17 @@ private fun DownloadCard(record: DownloadRecord, percent: Int?, onChangeQuality:
                             Icon(painterResource(R.drawable.ic_share), contentDescription = "Share")
                         }
                     }
-                    MoreMenu("Remove from list" to { DownloadStore.remove(record.id) })
+                    MoreMenu(
+                        "Download another quality" to onAnotherQuality,
+                        "Remove from list" to { DownloadStore.remove(record.id) },
+                    )
                 }
 
                 DownloadStatus.FAILED, DownloadStatus.CANCELLED -> {
                     TextButton(onClick = { DownloadStore.retry(context, record.id) }) { Text("Retry") }
                     MoreMenu(
                         "Change quality" to onChangeQuality,
+                        "Download another quality" to onAnotherQuality,
                         "Remove from list" to { DownloadStore.remove(record.id) },
                     )
                 }

@@ -134,6 +134,9 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_CLIP_START = "clipStart"
         private const val KEY_CLIP_END = "clipEnd"
 
+        /** How many videos of a playlist (or Retry all) download at the same time. */
+        const val AT_A_TIME = 2
+
         /**
          * Queues a download and adds it to the Downloads tab; it starts right away and survives
          * leaving the app.
@@ -152,16 +155,16 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         }
 
         /**
-         * Queues every video of [playlist] with the same quality, as a *chain*: WorkManager starts
-         * each one after the one before has finished, so the phone downloads one video at a time.
-         * They share a group id, so cancelling one marks the rest of the chain cancelled too.
+         * Queues every video of [playlist] with the same quality, two at a time (see [enqueueInOrder]).
          */
         fun enqueuePlaylist(context: Context, playlist: Playlist, option: QualityOption, extras: DownloadExtras) =
             enqueueInOrder(context, playlist.entries.map { DownloadRequest(it.url, it.title, it.thumbnailUrl, option, extras) })
 
         /**
-         * Queues [requests] as a chain, one download at a time in this order (playlists, Retry all).
-         * They share a group id, so cancelling one marks the rest of the chain cancelled too.
+         * Queues [requests] to download [AT_A_TIME] at a time, roughly in this order (playlists, Retry all).
+         * Each *lane* is a WorkManager chain, where every job starts when the one before it ends;
+         * requests 1, 3, 5… go in one lane and 2, 4, 6… in the other. They share a group id (also a
+         * WorkManager tag), so cancelling one of them stops the whole group.
          */
         fun enqueueInOrder(context: Context, requests: List<DownloadRequest>) {
             if (requests.isEmpty()) return
@@ -169,10 +172,11 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             val downloads = requests.map { newDownload(it.url, it.title, it.thumbnailUrl, it.option, it.extras, group) }
             // addAll puts them on top in this order, so the first one to download is the top card.
             DownloadStore.addAll(downloads.map { it.second })
-            val work = downloads.map { it.first }
-            work.drop(1)
-                .fold(WorkManager.getInstance(context).beginWith(work.first())) { chain, next -> chain.then(next) }
-                .enqueue()
+            val workManager = WorkManager.getInstance(context)
+            val lanes = downloads.map { it.first }.withIndex().groupBy({ it.index % AT_A_TIME }, { it.value })
+            lanes.values.forEach { lane ->
+                lane.drop(1).fold(workManager.beginWith(lane.first())) { chain, next -> chain.then(next) }.enqueue()
+            }
         }
 
         /** The WorkManager job and its Downloads-tab row, not yet queued or saved. */
@@ -197,6 +201,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         KEY_CLIP_END to (extras.clip?.endSeconds ?: -1),
                     )
                 )
+                // The group id as a tag lets DownloadStore cancel the whole group in one go.
+                .apply { if (group != null) addTag(group) }
                 .build()
             return request to DownloadRecord(
                 id = request.id.toString(),

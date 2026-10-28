@@ -72,7 +72,7 @@ class DownloadStoreTest {
     }
 
     @Test
-    fun cancellingAPlaylistVideoCancelsTheOnesStillWaiting() {
+    fun cancellingAPlaylistVideoCancelsTheWholeGroup() {
         DownloadStore.init(tmp.newFile("downloads.json"))
         DownloadStore.addAll(
             listOf(
@@ -82,10 +82,10 @@ class DownloadStoreTest {
                 record("other"),
             )
         )
-        DownloadStore.cancelWaitingInGroup("g")
+        DownloadStore.cancelGroup("g")
         val status = DownloadStore.records.value.associate { it.id to it.status }
         assertEquals(DownloadStatus.DONE, status["p1"])
-        assertEquals(DownloadStatus.RUNNING, status["p2"]) // cancelled separately by cancel()
+        assertEquals(DownloadStatus.CANCELLED, status["p2"]) // running ones too: both lanes stop
         assertEquals(DownloadStatus.CANCELLED, status["p3"])
         assertEquals(DownloadStatus.QUEUED, status["other"])
     }

@@ -284,8 +284,8 @@ private fun PlaylistHeader(playlist: Playlist) {
         Spacer(Modifier.size(4.dp))
         Text(playlist.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Text(
-            if (playlist.isCut) "Only the first ${playlist.entries.size} of ${playlist.totalCount} videos. They download one after another."
-            else "Playlist. The videos download one after another.",
+            if (playlist.isCut) "Only the first ${playlist.entries.size} of ${playlist.totalCount} videos. They download two at a time."
+            else "Playlist. The videos download two at a time.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

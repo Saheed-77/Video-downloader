@@ -73,11 +73,15 @@ object DownloadStore {
 
     /** Stops an active download. Marked Cancelled straight away, in case it hadn't started yet. */
     fun cancel(context: Context, id: String) {
-        val record = find(id)
-        WorkManager.getInstance(context).cancelWorkById(UUID.fromString(id))
-        update(id) { if (it.isActive) it.copy(status = DownloadStatus.CANCELLED) else it }
-        // WorkManager also cancels the playlist videos waiting after this one; show that.
-        record?.group?.let { cancelWaitingInGroup(it) }
+        val group = find(id)?.group
+        if (group != null) {
+            // A playlist (or Retry all) video: stop the whole group, both lanes.
+            WorkManager.getInstance(context).cancelAllWorkByTag(group)
+            cancelGroup(group)
+        } else {
+            WorkManager.getInstance(context).cancelWorkById(UUID.fromString(id))
+            update(id) { if (it.isActive) it.copy(status = DownloadStatus.CANCELLED) else it }
+        }
     }
 
     /** "Cancel all": stops every download that's running or waiting. */
@@ -86,7 +90,7 @@ object DownloadStore {
     }
 
     /**
-     * "Retry all": starts every failed or cancelled download again, one after another (not all at
+     * "Retry all": starts every failed or cancelled download again, two at a time (not all at
      * once, which could mean dozens of downloads after a cancelled playlist). Each gets a new row.
      */
     fun retryAll(context: Context) {
@@ -101,11 +105,11 @@ object DownloadStore {
         )
     }
 
-    /** Marks the still-waiting videos of playlist download [group] as cancelled. */
+    /** Marks every running or waiting download of [group] (a playlist or Retry all) as cancelled. */
     @Synchronized
-    fun cancelWaitingInGroup(group: String) = save(
+    fun cancelGroup(group: String) = save(
         _records.value.map {
-            if (it.group == group && it.status == DownloadStatus.QUEUED) it.copy(status = DownloadStatus.CANCELLED) else it
+            if (it.group == group && it.isActive) it.copy(status = DownloadStatus.CANCELLED) else it
         }
     )
 

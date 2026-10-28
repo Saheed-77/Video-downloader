@@ -80,6 +80,27 @@ object DownloadStore {
         record?.group?.let { cancelWaitingInGroup(it) }
     }
 
+    /** "Cancel all": stops every download that's running or waiting. */
+    fun cancelAll(context: Context) {
+        _records.value.filter { it.isActive }.forEach { cancel(context, it.id) }
+    }
+
+    /**
+     * "Retry all": starts every failed or cancelled download again, one after another (not all at
+     * once, which could mean dozens of downloads after a cancelled playlist). Each gets a new row.
+     */
+    fun retryAll(context: Context) {
+        val stopped = _records.value.filter { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
+        if (stopped.isEmpty()) return
+        val ids = stopped.map { it.id }.toSet()
+        save(_records.value.filterNot { it.id in ids })
+        stopped.forEach { Notifications.cancel(context, Notifications.resultId(it.id)) }
+        DownloadWorker.enqueueInOrder(
+            context,
+            stopped.map { DownloadRequest(it.url, it.title, it.thumbnailUrl, it.toOption(), it.toExtras()) },
+        )
+    }
+
     /** Marks the still-waiting videos of playlist download [group] as cancelled. */
     @Synchronized
     fun cancelWaitingInGroup(group: String) = save(

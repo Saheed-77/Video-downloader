@@ -21,6 +21,15 @@ import kotlinx.coroutines.runInterruptible
 import java.io.File
 import java.util.UUID
 
+/** One download to start: what [DownloadWorker.enqueueInOrder] takes. */
+data class DownloadRequest(
+    val url: String,
+    val title: String,
+    val thumbnailUrl: String?,
+    val option: QualityOption,
+    val extras: DownloadExtras,
+)
+
 /**
  * Runs one download in the background with *WorkManager* (Android's job scheduler for work that
  * must finish even if the user leaves the app). It runs as a *foreground worker*: it keeps a
@@ -147,15 +156,22 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
          * each one after the one before has finished, so the phone downloads one video at a time.
          * They share a group id, so cancelling one marks the rest of the chain cancelled too.
          */
-        fun enqueuePlaylist(context: Context, playlist: Playlist, option: QualityOption, extras: DownloadExtras) {
-            if (playlist.entries.isEmpty()) return
+        fun enqueuePlaylist(context: Context, playlist: Playlist, option: QualityOption, extras: DownloadExtras) =
+            enqueueInOrder(context, playlist.entries.map { DownloadRequest(it.url, it.title, it.thumbnailUrl, option, extras) })
+
+        /**
+         * Queues [requests] as a chain, one download at a time in this order (playlists, Retry all).
+         * They share a group id, so cancelling one marks the rest of the chain cancelled too.
+         */
+        fun enqueueInOrder(context: Context, requests: List<DownloadRequest>) {
+            if (requests.isEmpty()) return
             val group = UUID.randomUUID().toString()
-            val downloads = playlist.entries.map { newDownload(it.url, it.title, it.thumbnailUrl, option, extras, group) }
-            // The list shows newest first, so add them in reverse: the first video ends up on top.
-            DownloadStore.addAll(downloads.map { it.second }.reversed())
-            val requests = downloads.map { it.first }
-            requests.drop(1)
-                .fold(WorkManager.getInstance(context).beginWith(requests.first())) { chain, next -> chain.then(next) }
+            val downloads = requests.map { newDownload(it.url, it.title, it.thumbnailUrl, it.option, it.extras, group) }
+            // addAll puts them on top in this order, so the first one to download is the top card.
+            DownloadStore.addAll(downloads.map { it.second })
+            val work = downloads.map { it.first }
+            work.drop(1)
+                .fold(WorkManager.getInstance(context).beginWith(work.first())) { chain, next -> chain.then(next) }
                 .enqueue()
         }
 

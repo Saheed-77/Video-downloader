@@ -36,10 +36,11 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] U5: Subtitles — English only (Saheed chose, avoids YouTube "too many requests"); real subtitles, not auto-captions — checked on the S24 (English mov_text track confirmed)
 - [x] U6: Clip a section — checked on the S24 (1:00–1:30 at 720p gave a 30.0 s H.264 MP4 with subtitles)
 - [x] U6 fix: no subtitles on clips (Saheed chose; yt-dlp doesn't cut subtitles and ffmpeg's shift options gave wrong times) — Subtitles chip greys out while Clip is on
-- [x] U6b: Change quality (running and cancelled/failed cards) — build + tests pass, phone check pending
-- [x] U7: Playlist download — build + tests pass, phone check pending (cancel stops the videos still waiting; Change quality hidden on active playlist videos)
+- [x] U6b: Change quality (running and cancelled/failed cards) — checked on the S24 (running 1080p → 144p, cancelled 360p → 144p)
+- [x] U7: Playlist download — checked on the S24 (6-video TEDx playlist, one after another; cancel stops the waiting ones)
+- [x] Cancel all / Retry all buttons on the Downloads tab (Saheed asked, 28 Oct) — checked on the S24; Retry all restarts them one at a time
 - [ ] **Checkpoint:** review extras
-- [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; phone test of all of Phase 5 still to do
+- [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; on the S24 P11, P13–P16, P18 pass; P1–P10, P12, P17 still to run
 
 ## Future (after downloads work)
 - [ ] In-app download history screen (now Phase 5, U3)

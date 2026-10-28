@@ -74,4 +74,13 @@ class ErrorMapperTest {
         assertEquals(ErrorMapper.UPDATE, map("ERROR: HTTP Error 403: Forbidden"))
         assertEquals(ErrorMapper.UPDATE, map(null))
     }
+
+    @Test
+    fun missingPlaylist() {
+        // Seen on the S24 with a playlist id that doesn't exist.
+        assertEquals(
+            ErrorMapper.NO_PLAYLIST,
+            ErrorMapper.toMessage("ERROR: [youtube:tab] PLabc: YouTube said: The playlist does not exist."),
+        )
+    }
 }

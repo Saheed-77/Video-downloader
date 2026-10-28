@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -76,7 +77,22 @@ fun DownloadsTab() {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        item { Text("Downloads", style = MaterialTheme.typography.headlineMedium) }
+        item {
+            Text("Downloads", style = MaterialTheme.typography.headlineMedium)
+            // Only shown when there's something to cancel or retry.
+            val anyActive = records.any { it.isActive }
+            val anyStopped = records.any { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
+            if (anyActive || anyStopped) {
+                Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (anyActive) {
+                        OutlinedButton(onClick = { DownloadStore.cancelAll(context) }) { Text("Cancel all") }
+                    }
+                    if (anyStopped) {
+                        OutlinedButton(onClick = { DownloadStore.retryAll(context) }) { Text("Retry all") }
+                    }
+                }
+            }
+        }
         // key: lets Compose keep each card's state (like its open menu) with the right row.
         items(records, key = { it.id }) { record ->
             DownloadCard(record, progress[record.id], onChangeQuality = { changing = record })

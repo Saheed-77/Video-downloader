@@ -9,6 +9,7 @@ object ErrorMapper {
     const val LOGIN = "Login required (Instagram/Facebook often need this)"
     const val UNSUPPORTED = "Unsupported link"
     const val UNAVAILABLE = "This video is unavailable"
+    const val NO_PLAYLIST = "This playlist doesn't exist or is private"
     const val NO_FORMAT = "That quality isn't available for this video. Try another one."
     const val UPDATE = "Download failed. Try updating the downloader engine."
 
@@ -27,6 +28,7 @@ object ErrorMapper {
             "use --cookies", "cookies-from-browser", "account authentication",
         ),
         UNSUPPORTED to listOf("unsupported url", "is not a valid url"),
+        NO_PLAYLIST to listOf("playlist does not exist", "this playlist is private"),
         UNAVAILABLE to listOf("video unavailable", "video is unavailable", "has been removed", "not available in your country"),
         NO_FORMAT to listOf("requested format is not available"),
     )

@@ -3,6 +3,7 @@ package com.saheed.videodownloader.share
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import android.content.Context
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,6 +78,7 @@ private sealed interface PickerState {
 }
 
 private val thumbnailShape = RoundedCornerShape(12.dp)
+private const val TAG = "FormatPicker"
 private const val PREFS = "picker"
 private const val KEY_SUBTITLES = "subtitles"
 
@@ -124,6 +126,8 @@ fun FormatPicker(
             if (playlist.entries.isEmpty()) PickerState.Failed("This playlist has no videos that can be downloaded.")
             else PickerState.PlaylistLoaded(playlist)
         } catch (e: Exception) {
+            // The friendly message hides the details, so keep the real error in the log.
+            Log.w(TAG, "Lookup failed for $url: $e", e)
             PickerState.Failed(ErrorMapper.toMessage(e.message))
         } else try {
             val info = withContext(Dispatchers.IO) {
@@ -136,6 +140,8 @@ fun FormatPicker(
             }
             PickerState.Loaded(VideoMeta.fromVideoInfo(info), FormatParser.fromVideoInfo(info))
         } catch (e: Exception) {
+            // The friendly message hides the details, so keep the real error in the log.
+            Log.w(TAG, "Lookup failed for $url: $e", e)
             PickerState.Failed(ErrorMapper.toMessage(e.message))
         }
     }

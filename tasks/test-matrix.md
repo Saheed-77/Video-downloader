@@ -54,13 +54,14 @@ Install over **wireless debugging** (PC hotspot) or Android Studio **Run ▶**; 
 | P8 | List survives restart | Close the app fully, reopen → the list is still there | |
 | P9 | Notification buttons | "Download complete" → **Share**; "Download failed" (airplane mode mid-download) → **Retry** | |
 | P10 | Subtitles | TED talk, Subtitles on, 720p → player shows English subtitles (CC menu) | |
-| P11 | Clip | Clip on, 1:00 → 1:30 → a 30-second file; Subtitles chip greyed out while Clip is on | |
+| P11 | Clip | Clip on, 1:00 → 1:30 → a 30-second file; Subtitles chip greyed out while Clip is on | ✅ 28 Oct: Subtitles chip greyed with "Subtitles aren't available for clips" |
 | P12 | Clip errors | Start after End, or past the video length → red message, quality rows greyed out | |
-| P13 | Change quality (running) | Start 1080p → Downloads ⋮ → **Change quality** → 480p: old card gone, new 480p card runs | |
-| P14 | Change quality (stopped) | Cancel one → ⋮ → **Change quality**: Clip times and Subtitles come back filled in | |
-| P15 | Playlist | Share a YouTube **playlist** link (youtube.com/playlist?list=…) with 3–5 videos → "N videos" header → pick 720p → videos download one after another, each with its own card | |
-| P16 | Playlist cancel | During a playlist download, ✕ on the running video → it and the waiting ones show "Cancelled" | |
+| P13 | Change quality (running) | Start 1080p → Downloads ⋮ → **Change quality** → 480p: old card gone, new 480p card runs | ✅ 28 Oct: 1080p → 144p while running; 1080p card gone, 144p finished (10 MB) |
+| P14 | Change quality (stopped) | Cancel one → ⋮ → **Change quality**: Clip times and Subtitles come back filled in | ✅ 28 Oct: cancelled 360p → 144p; Subtitles setting kept, card replaced |
+| P15 | Playlist | Share a YouTube **playlist** link (youtube.com/playlist?list=…) with 3–5 videos → "N videos" header → pick 720p → videos download one after another, each with its own card | ✅ 28 Oct: TEDx "Celebrating planet Earth", 6 videos at 360p, one after another (first: 22 MB) |
+| P16 | Playlist cancel | During a playlist download, ✕ on the running video → it and the waiting ones show "Cancelled" | ✅ 28 Oct: running + 4 waiting → all Cancelled, nothing restarted |
 | P17 | Video inside a playlist | Share a video opened from inside a playlist (watch?v=…&list=…) → just that one video, as before | |
+| P18 | Cancel all / Retry all | Downloads tab buttons: Retry all restarts every failed/cancelled one in order (one at a time); Cancel all stops every running/waiting one | ✅ 28 Oct: 5 cancelled → Retry all (1 running, 4 waiting) → Cancel all (all Cancelled) |
 
 ## 4. If something fails
 

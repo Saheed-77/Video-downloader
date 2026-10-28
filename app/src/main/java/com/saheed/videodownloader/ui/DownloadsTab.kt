@@ -23,14 +23,20 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,9 +85,12 @@ fun DownloadsTab() {
         modifier = Modifier.fillMaxSize(),
     ) {
         item {
-            Text("Downloads", style = MaterialTheme.typography.headlineMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Downloads", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                ClearMenu(records)
+            }
             // Only shown when there's something to cancel or retry.
-            val anyActive = records.any { it.isActive }
+            val anyActive = records.any { it.isActive || it.status == DownloadStatus.PAUSED }
             val anyStopped = records.any { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
             if (anyActive || anyStopped) {
                 Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -94,14 +103,23 @@ fun DownloadsTab() {
                 }
             }
         }
-        // key: lets Compose keep each card's state (like its open menu) with the right row.
-        items(records, key = { it.id }) { record ->
-            DownloadCard(
-                record,
-                progress[record.id],
-                onChangeQuality = { picking = QualityPick(record, replaceOld = true) },
-                onAnotherQuality = { picking = QualityPick(record, replaceOld = false) },
-            )
+        // key: lets Compose keep each block's state (an open menu, a hidden section) with the right one.
+        items(toBlocks(records), key = { it.key }) { block ->
+            // One way to show a video card, used for single videos and inside playlist sections.
+            val card: @Composable (DownloadRecord) -> Unit = { record ->
+                SwipeToRemove(record) {
+                    DownloadCard(
+                        record,
+                        progress[record.id],
+                        onChangeQuality = { picking = QualityPick(record, replaceOld = true) },
+                        onAnotherQuality = { picking = QualityPick(record, replaceOld = false) },
+                    )
+                }
+            }
+            when (block) {
+                is DownloadBlock.Single -> card(block.record)
+                is DownloadBlock.Playlist -> PlaylistSection(block, card)
+            }
         }
     }
 
@@ -168,13 +186,8 @@ private fun DownloadCard(
                     IconButton(onClick = { DownloadStore.cancel(context, record.id) }) {
                         Icon(painterResource(R.drawable.ic_close), contentDescription = "Cancel")
                     }
-                    // Keeps downloading until a new quality is actually picked. Not for a waiting
-                    // playlist video: stopping it would also stop the videos queued after it.
-                    if (record.group == null) {
-                        MoreMenu("Change quality" to onChangeQuality, "Download another quality" to onAnotherQuality)
-                    } else {
-                        MoreMenu("Download another quality" to onAnotherQuality)
-                    }
+                    // Keeps downloading until a new quality is actually picked.
+                    MoreMenu("Change quality" to onChangeQuality, "Download another quality" to onAnotherQuality)
                 }
 
                 DownloadStatus.DONE -> {
@@ -188,6 +201,9 @@ private fun DownloadCard(
                         "Remove from list" to { DownloadStore.remove(record.id) },
                     )
                 }
+
+                // Stopped with its playlist's Stop button: the section's Resume starts it again.
+                DownloadStatus.PAUSED -> MoreMenu("Remove from list" to { DownloadStore.remove(record.id) })
 
                 DownloadStatus.FAILED, DownloadStatus.CANCELLED -> {
                     TextButton(onClick = { DownloadStore.retry(context, record.id) }) { Text("Retry") }
@@ -208,6 +224,112 @@ private fun DownloadCard(
             }
         }
     }
+}
+
+/**
+ * A playlist's section: its name, a summary, buttons for the whole playlist, and its videos.
+ * Tapping the name hides or shows the videos.
+ */
+@Composable
+private fun PlaylistSection(playlist: DownloadBlock.Playlist, card: @Composable (DownloadRecord) -> Unit) {
+    val context = LocalContext.current
+    val videos = playlist.videos
+    // rememberSaveable keyed by the playlist, so each section remembers if it's hidden.
+    var expanded by rememberSaveable(playlist.group) { mutableStateOf(true) }
+    val anyActive = videos.any { it.isActive }
+    val anyPaused = videos.any { it.status == DownloadStatus.PAUSED }
+    val anyStopped = videos.any { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
+
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable { expanded = !expanded }
+                        .padding(4.dp)
+                ) {
+                    Text(playlist.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        playlistSummary(videos) + if (expanded) "" else " · tap to show",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (!anyActive) {
+                    MoreMenu("Remove playlist from list" to { DownloadStore.removeGroup(playlist.group) })
+                }
+            }
+            // Only the buttons that would do something right now.
+            if (anyActive || anyPaused || anyStopped) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (anyActive) TextButton(onClick = { DownloadStore.stopGroup(context, playlist.group) }) { Text("Stop") }
+                    if (anyPaused) TextButton(onClick = { DownloadStore.resumeGroup(context, playlist.group) }) { Text("Resume") }
+                    if (anyActive || anyPaused) {
+                        TextButton(onClick = { DownloadStore.cancelGroup(context, playlist.group) }) { Text("Cancel") }
+                    }
+                    if (anyStopped) TextButton(onClick = { DownloadStore.retryGroup(context, playlist.group) }) { Text("Retry") }
+                }
+            }
+            // key(): ties each card's state (like a half-done swipe) to its own video, so removing
+            // one doesn't hand its swiped-away state to the card below.
+            if (expanded) videos.forEach { video -> key(video.id) { card(video) } }
+        }
+    }
+}
+
+/**
+ * Lets a finished, failed, cancelled or stopped card be swiped left to remove it from the list.
+ * A *SwipeToDismissBox* is a row you can drag sideways; the red "Remove" shows underneath.
+ * Running and waiting cards can't be swiped, so nothing is removed mid-download.
+ */
+@Composable
+private fun SwipeToRemove(record: DownloadRecord, content: @Composable () -> Unit) {
+    if (record.isActive) {
+        content()
+        return
+    }
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) DownloadStore.remove(record.id)
+            value == SwipeToDismissBoxValue.EndToStart
+        }
+    )
+    SwipeToDismissBox(
+        state = state,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                Text("Remove", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.labelLarge)
+            }
+        },
+    ) { content() }
+}
+
+/**
+ * The ⋮ next to "Downloads": clears many rows at once. Each item shows only when it would remove
+ * something. The files themselves stay in the phone's Downloads folder.
+ */
+@Composable
+private fun ClearMenu(records: List<DownloadRecord>) {
+    val finished = setOf(DownloadStatus.DONE)
+    val stopped = setOf(DownloadStatus.FAILED, DownloadStatus.CANCELLED)
+    val notRunning = finished + stopped + DownloadStatus.PAUSED
+    val items = listOfNotNull(
+        ("Clear finished" to { DownloadStore.clear(finished) }).takeIf { records.any { it.status in finished } },
+        ("Clear failed and cancelled" to { DownloadStore.clear(stopped) }).takeIf { records.any { it.status in stopped } },
+        ("Clear all except running" to { DownloadStore.clear(notRunning) }).takeIf { records.any { it.status in notRunning } },
+    )
+    // `*` spreads the list into MoreMenu's vararg, like passing an array to Java's `String...`.
+    if (items.isNotEmpty()) MoreMenu(*items.toTypedArray())
 }
 
 @Composable
@@ -269,6 +391,7 @@ private fun statusText(record: DownloadRecord, percent: Int?, context: android.c
         )
         DownloadStatus.FAILED -> listOf(record.error ?: "Failed")
         DownloadStatus.CANCELLED -> listOf("Cancelled")
+        DownloadStatus.PAUSED -> listOf("Stopped")
     }
     return parts.joinToString(" · ")
 }

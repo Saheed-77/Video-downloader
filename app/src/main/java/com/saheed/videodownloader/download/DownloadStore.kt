@@ -17,6 +17,9 @@ import java.util.UUID
  * The list behind the Downloads tab, saved as a small JSON file so it survives closing the app.
  * The download worker runs in the same app process, so its updates reach the screen straight away
  * through [records] and [progress].
+ *
+ * It also queues playlist videos: they wait here as QUEUED rows, and [pump] hands the next ones to
+ * WorkManager whenever one ends, keeping [DownloadWorker.AT_A_TIME] running per playlist.
  */
 object DownloadStore {
 
@@ -71,91 +74,196 @@ object DownloadStore {
 
     fun clearProgress(id: String) = _progress.update { it - id }
 
-    /** Stops an active download. Marked Cancelled straight away, in case it hadn't started yet. */
-    fun cancel(context: Context, id: String) {
-        val group = find(id)?.group
-        if (group != null) {
-            // A playlist (or Retry all) video: stop the whole group, both lanes.
-            WorkManager.getInstance(context).cancelAllWorkByTag(group)
-            cancelGroup(group)
-        } else {
-            WorkManager.getInstance(context).cancelWorkById(UUID.fromString(id))
-            update(id) { if (it.isActive) it.copy(status = DownloadStatus.CANCELLED) else it }
-        }
-    }
+    // ---- Playlist queue ----
 
-    /** "Cancel all": stops every download that's running or waiting. */
-    fun cancelAll(context: Context) {
-        _records.value.filter { it.isActive }.forEach { cancel(context, it.id) }
-    }
-
-    /**
-     * "Retry all": starts every failed or cancelled download again, two at a time (not all at
-     * once, which could mean dozens of downloads after a cancelled playlist). Each gets a new row.
-     */
-    fun retryAll(context: Context) {
-        val stopped = _records.value.filter { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
-        if (stopped.isEmpty()) return
-        val ids = stopped.map { it.id }.toSet()
-        save(_records.value.filterNot { it.id in ids })
-        stopped.forEach { Notifications.cancel(context, Notifications.resultId(it.id)) }
-        DownloadWorker.enqueueInOrder(
-            context,
-            stopped.map { DownloadRequest(it.url, it.title, it.thumbnailUrl, it.toOption(), it.toExtras()) },
-        )
-    }
-
-    /** Marks every running or waiting download of [group] (a playlist or Retry all) as cancelled. */
+    /** Starts the next waiting videos of playlist [group], up to [DownloadWorker.AT_A_TIME] at once. */
     @Synchronized
-    fun cancelGroup(group: String) = save(
-        _records.value.map {
-            if (it.group == group && it.isActive) it.copy(status = DownloadStatus.CANCELLED) else it
-        }
-    )
+    fun pump(context: Context, group: String) {
+        val next = nextToStart(_records.value, group)
+        if (next.isEmpty()) return
+        val ids = next.map { it.id }.toSet()
+        save(_records.value.map { if (it.id in ids) it.copy(status = DownloadStatus.RUNNING) else it })
+        next.forEach { DownloadWorker.start(context, it) }
+    }
+
+    /** The waiting videos of [group] to start now, in list order. Pure, so tests can check it. */
+    fun nextToStart(records: List<DownloadRecord>, group: String): List<DownloadRecord> {
+        val inGroup = records.filter { it.group == group }
+        val free = DownloadWorker.AT_A_TIME - inGroup.count { it.status == DownloadStatus.RUNNING }
+        return if (free <= 0) emptyList() else inGroup.filter { it.status == DownloadStatus.QUEUED }.take(free)
+    }
+
+    // ---- One download ----
+
+    /** Stops one download. Only this one: the rest of its playlist carries on. */
+    fun cancel(context: Context, id: String) {
+        val record = find(id) ?: return
+        // Marked first, so the worker's "start the next one" never restarts it.
+        update(id) { if (it.isActive || it.status == DownloadStatus.PAUSED) it.copy(status = DownloadStatus.CANCELLED) else it }
+        // A waiting playlist video has no WorkManager job yet; this is then harmless.
+        WorkManager.getInstance(context).cancelWorkById(UUID.fromString(record.id))
+    }
 
     /**
-     * Starts the same download again as a new row, replacing the failed/cancelled one.
+     * Starts a failed or cancelled download again. A playlist video goes back to waiting in the
+     * same place in its playlist; a single video becomes a new row replacing the old one.
      * Used by the Downloads tab and the notification's Retry button.
      */
     fun retry(context: Context, id: String) {
-        val old = replace(context, id) ?: return
-        DownloadWorker.enqueue(context, old.url, old.title, old.thumbnailUrl, old.toOption(), old.toExtras())
+        val old = find(id) ?: return
+        if (old.group != null) {
+            requeueInPlace(context, old) { it }
+        } else {
+            replace(context, id)
+            DownloadWorker.enqueue(context, old.url, old.title, old.thumbnailUrl, old.toOption(), old.toExtras())
+        }
     }
 
     /**
      * "Change quality": stops download [id] if it's still running and starts the same video again
-     * with the newly picked [option] and [extras], as a new row replacing the old one.
+     * with the newly picked [option] and [extras], replacing the old row (in place for a playlist video).
      */
     fun changeQuality(context: Context, id: String, meta: VideoMeta, option: QualityOption, extras: DownloadExtras) {
-        val old = replace(context, id) ?: return
-        DownloadWorker.enqueue(context, old.url, meta.title, meta.thumbnailUrl ?: old.thumbnailUrl, option, extras)
+        val old = find(id) ?: return
+        if (old.group != null) {
+            requeueInPlace(context, old) {
+                it.copy(
+                    label = option.label,
+                    format = option.format,
+                    isAudio = option.isAudio,
+                    subtitles = extras.subtitles,
+                    clipStart = extras.clip?.startSeconds,
+                    clipEnd = extras.clip?.endSeconds,
+                )
+            }
+        } else {
+            replace(context, id)
+            DownloadWorker.enqueue(context, old.url, meta.title, meta.thumbnailUrl ?: old.thumbnailUrl, option, extras)
+        }
     }
 
-    /** Stops [id] if active, removes its row and its old result notification; returns the old row. */
-    private fun replace(context: Context, id: String): DownloadRecord? {
-        val old = find(id) ?: return null
+    /** Stops [id] if active, removes its row and its old result notification. */
+    private fun replace(context: Context, id: String) {
+        val old = find(id) ?: return
         if (old.isActive) WorkManager.getInstance(context).cancelWorkById(UUID.fromString(id))
         remove(id)
         // The old "Download failed" notification is out of date now.
         Notifications.cancel(context, Notifications.resultId(id))
-        return old
     }
 
     /**
+     * Puts playlist video [old] back to waiting where it is, with [change] applied, then lets the
+     * queue start it. It gets a new id: WorkManager can't reuse the id of a job it already ran.
+     */
+    private fun requeueInPlace(context: Context, old: DownloadRecord, change: (DownloadRecord) -> DownloadRecord) {
+        val fresh = change(old).asWaiting()
+        save(_records.value.map { if (it.id == old.id) fresh else it })
+        if (old.status == DownloadStatus.RUNNING) WorkManager.getInstance(context).cancelWorkById(UUID.fromString(old.id))
+        Notifications.cancel(context, Notifications.resultId(old.id))
+        pump(context, old.group ?: return)
+    }
+
+    /** The same download as a new waiting row: new id, no result or error yet. */
+    private fun DownloadRecord.asWaiting() = copy(
+        id = UUID.randomUUID().toString(),
+        status = DownloadStatus.QUEUED,
+        error = null,
+        uri = null,
+        mime = null,
+        sizeBytes = null,
+        createdAt = System.currentTimeMillis(),
+    )
+
+    // ---- A whole playlist ----
+
+    /** "Stop": running and waiting videos become Stopped; nothing more downloads until Resume. */
+    fun stopGroup(context: Context, group: String) =
+        markThenCancelJobs(context, group, setOf(DownloadStatus.RUNNING, DownloadStatus.QUEUED), DownloadStatus.PAUSED)
+
+    /** "Cancel": everything not finished yet becomes Cancelled. */
+    fun cancelGroup(context: Context, group: String) = markThenCancelJobs(
+        context, group,
+        setOf(DownloadStatus.RUNNING, DownloadStatus.QUEUED, DownloadStatus.PAUSED), DownloadStatus.CANCELLED,
+    )
+
+    /** "Resume": stopped videos wait again (they restart from the beginning). */
+    fun resumeGroup(context: Context, group: String) =
+        requeueGroup(context, group, setOf(DownloadStatus.PAUSED))
+
+    /** "Retry": failed and cancelled videos of the playlist wait again, in place. */
+    fun retryGroup(context: Context, group: String) =
+        requeueGroup(context, group, setOf(DownloadStatus.FAILED, DownloadStatus.CANCELLED))
+
+    /** "Remove playlist from list": its rows go; the downloaded files stay in Downloads. */
+    @Synchronized
+    fun removeGroup(group: String) = save(_records.value.filterNot { it.group == group })
+
+    /**
+     * Marks [group]'s rows in [from] as [to] first, then stops their WorkManager jobs. In this order
+     * a stopped job's "start the next one" finds nothing waiting, so it can't start a new video.
+     */
+    private fun markThenCancelJobs(context: Context, group: String?, from: Set<DownloadStatus>, to: DownloadStatus) {
+        val hit = synchronized(this) {
+            val hit = _records.value.filter { (group == null || it.group == group) && it.status in from }
+            val ids = hit.map { it.id }.toSet()
+            save(_records.value.map { if (it.id in ids) it.copy(status = to) else it })
+            hit
+        }
+        val workManager = WorkManager.getInstance(context)
+        hit.filter { it.status == DownloadStatus.RUNNING || it.group == null }
+            .forEach { workManager.cancelWorkById(UUID.fromString(it.id)) }
+    }
+
+    private fun requeueGroup(context: Context, group: String, from: Set<DownloadStatus>) {
+        synchronized(this) {
+            save(_records.value.map { if (it.group == group && it.status in from) it.asWaiting() else it })
+        }
+        pump(context, group)
+    }
+
+    // ---- Everything ----
+
+    /** "Cancel all": stops every download that's running, waiting or stopped. */
+    fun cancelAll(context: Context) = markThenCancelJobs(
+        context, group = null,
+        setOf(DownloadStatus.RUNNING, DownloadStatus.QUEUED, DownloadStatus.PAUSED), DownloadStatus.CANCELLED,
+    )
+
+    /**
+     * "Retry all": playlist videos go back to waiting in their playlist (which keeps them two at a
+     * time); single videos start again as new rows.
+     */
+    fun retryAll(context: Context) {
+        val stopped = _records.value.filter { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
+        stopped.mapNotNull { it.group }.toSet().forEach { retryGroup(context, it) }
+        stopped.filter { it.group == null }.forEach { retry(context, it.id) }
+        stopped.forEach { Notifications.cancel(context, Notifications.resultId(it.id)) }
+    }
+
+    /** Clear menu: removes every row with one of [statuses]. Files stay in Downloads. */
+    @Synchronized
+    fun clear(statuses: Set<DownloadStatus>) = save(_records.value.filterNot { it.status in statuses })
+
+    /**
      * Rows still marked Waiting/Downloading whose job has ended without saying so (for example
-     * the phone killed the app mid-download) become Failed, so they get a Retry button.
+     * the phone killed the app mid-download) become Failed, so they get a Retry button. Waiting
+     * playlist videos have no job yet, so they're skipped; their playlists are started up again.
      * Blocking: call from a background thread.
      */
     fun markInterrupted(context: Context) {
         val workManager = WorkManager.getInstance(context)
-        _records.value.filter { it.isActive }.forEach { record ->
-            val info = workManager.getWorkInfoById(UUID.fromString(record.id)).get()
-            if (info == null || info.state.isFinished) {
-                update(record.id) {
-                    if (it.isActive) it.copy(status = DownloadStatus.FAILED, error = "Interrupted. Tap Retry.") else it
+        _records.value
+            .filter { it.status == DownloadStatus.RUNNING || (it.status == DownloadStatus.QUEUED && it.group == null) }
+            .forEach { record ->
+                val info = workManager.getWorkInfoById(UUID.fromString(record.id)).get()
+                if (info == null || info.state.isFinished) {
+                    update(record.id) {
+                        if (it.isActive) it.copy(status = DownloadStatus.FAILED, error = "Interrupted. Tap Retry.") else it
+                    }
                 }
             }
-        }
+        _records.value.filter { it.status == DownloadStatus.QUEUED }.mapNotNull { it.group }.toSet()
+            .forEach { pump(context, it) }
     }
 
     private fun save(list: List<DownloadRecord>) {

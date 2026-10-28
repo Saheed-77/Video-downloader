@@ -5,7 +5,8 @@ import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.QualityOption
 import org.json.JSONObject
 
-enum class DownloadStatus { QUEUED, RUNNING, DONE, FAILED, CANCELLED }
+/** PAUSED = a playlist video stopped with the playlist's Stop button; Resume starts it again. */
+enum class DownloadStatus { QUEUED, RUNNING, DONE, FAILED, CANCELLED, PAUSED }
 
 /**
  * One row of the Downloads tab. [id] is the WorkManager job's id.
@@ -25,6 +26,8 @@ data class DownloadRecord(
     val clipEnd: Int? = null,
     /** Shared by the videos of one playlist download; null for a single video. */
     val group: String? = null,
+    /** The playlist's name, shown on its section in the Downloads tab. */
+    val groupTitle: String? = null,
     val status: DownloadStatus,
     val createdAt: Long,
     /** The saved file (content:// address), once DONE. Null on Android 7–9. */
@@ -56,6 +59,7 @@ data class DownloadRecord(
         .put("clipStart", clipStart)
         .put("clipEnd", clipEnd)
         .put("group", group)
+        .put("groupTitle", groupTitle)
         .put("status", status.name)
         .put("createdAt", createdAt)
         .put("uri", uri)
@@ -76,6 +80,7 @@ data class DownloadRecord(
             clipStart = if (json.has("clipStart")) json.getInt("clipStart") else null,
             clipEnd = if (json.has("clipEnd")) json.getInt("clipEnd") else null,
             group = json.stringOrNull("group"),
+            groupTitle = json.stringOrNull("groupTitle"),
             status = DownloadStatus.valueOf(json.getString("status")),
             createdAt = json.getLong("createdAt"),
             uri = json.stringOrNull("uri"),

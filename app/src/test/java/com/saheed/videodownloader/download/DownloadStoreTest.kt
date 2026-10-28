@@ -34,8 +34,15 @@ class DownloadStoreTest {
             clipStart = 90,
             clipEnd = 165,
             group = "playlist-1",
+            groupTitle = "Kerala songs",
         )
         assertEquals(done, DownloadRecord.fromJson(done.toJson()))
+    }
+
+    @Test
+    fun stoppedStatusSurvivesSaving() {
+        val stopped = record("s", DownloadStatus.PAUSED).copy(group = "g")
+        assertEquals(stopped, DownloadRecord.fromJson(stopped.toJson()))
     }
 
     @Test
@@ -72,22 +79,45 @@ class DownloadStoreTest {
     }
 
     @Test
-    fun cancellingAPlaylistVideoCancelsTheWholeGroup() {
+    fun playlistQueueStartsTwoAtATimeInListOrder() {
+        val rows = listOf(
+            record("p1", DownloadStatus.DONE).copy(group = "g"),
+            record("p2", DownloadStatus.RUNNING).copy(group = "g"),
+            record("p3").copy(group = "g"),
+            record("p4").copy(group = "g"),
+            record("other"),
+        )
+        // One running already, so only one more starts: the next waiting one in the list.
+        assertEquals(listOf("p3"), DownloadStore.nextToStart(rows, "g").map { it.id })
+        // Nothing running: the first two waiting.
+        val idle = rows.map { if (it.id == "p2") it.copy(status = DownloadStatus.CANCELLED) else it }
+        assertEquals(listOf("p3", "p4"), DownloadStore.nextToStart(idle, "g").map { it.id })
+    }
+
+    @Test
+    fun stoppedPlaylistVideosDontStart() {
+        val rows = listOf(
+            record("p1", DownloadStatus.PAUSED).copy(group = "g"),
+            record("p2", DownloadStatus.CANCELLED).copy(group = "g"),
+        )
+        assertEquals(emptyList<DownloadRecord>(), DownloadStore.nextToStart(rows, "g"))
+    }
+
+    @Test
+    fun clearRemovesOnlyTheChosenStatuses() {
         DownloadStore.init(tmp.newFile("downloads.json"))
         DownloadStore.addAll(
             listOf(
-                record("p1", DownloadStatus.DONE).copy(group = "g"),
-                record("p2", DownloadStatus.RUNNING).copy(group = "g"),
-                record("p3").copy(group = "g"),
-                record("other"),
+                record("done", DownloadStatus.DONE),
+                record("failed", DownloadStatus.FAILED),
+                record("running", DownloadStatus.RUNNING),
+                record("stopped", DownloadStatus.PAUSED).copy(group = "g"),
             )
         )
-        DownloadStore.cancelGroup("g")
-        val status = DownloadStore.records.value.associate { it.id to it.status }
-        assertEquals(DownloadStatus.DONE, status["p1"])
-        assertEquals(DownloadStatus.CANCELLED, status["p2"]) // running ones too: both lanes stop
-        assertEquals(DownloadStatus.CANCELLED, status["p3"])
-        assertEquals(DownloadStatus.QUEUED, status["other"])
+        DownloadStore.clear(setOf(DownloadStatus.FAILED, DownloadStatus.CANCELLED))
+        assertEquals(listOf("done", "running", "stopped"), DownloadStore.records.value.map { it.id })
+        DownloadStore.clear(setOf(DownloadStatus.DONE, DownloadStatus.FAILED, DownloadStatus.CANCELLED, DownloadStatus.PAUSED))
+        assertEquals(listOf("running"), DownloadStore.records.value.map { it.id })
     }
 
     @Test

@@ -41,6 +41,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] Cancel all / Retry all buttons on the Downloads tab (Saheed asked, 28 Oct) — checked on the S24; Retry all restarts them one at a time
 - [x] "Download another quality" in every card's ⋮ menu (Saheed asked, 28 Oct): new card, original kept — checked on the S24. Separate downloads already run in parallel (checked: two 1080p at once); playlists and Retry all stay one at a time
 - [x] Playlists and Retry all download 2 at a time (Saheed asked, 28 Oct): two WorkManager chains ("lanes"); ✕ on one playlist video stops the whole group — lanes checked on the S24 (2 running, then the next pair); group cancel not yet checked on the phone. After a day of testing YouTube answered "429 Too Many Requests / confirm you're not a bot" for 5 of 6 videos (IP rate limit)
+- [x] Pauses for playlist and Retry all downloads (Saheed asked, 28 Oct): random 5–10 s before each video + 1 s between yt-dlp requests (`--sleep-interval 5 --max-sleep-interval 10 --sleep-requests 1`); single downloads unchanged — build + tests pass, not yet tried on the phone (YouTube was rate-limiting after the day's tests)
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; on the S24 P11, P13–P16, P18 pass; P1–P10, P12, P17 still to run
 

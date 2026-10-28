@@ -61,6 +61,15 @@ class DownloaderOptionsTest {
     }
 
     @Test
+    fun playlistDownloadsPauseSingleOnesDont() {
+        val paused = Downloader.options(format, false, DownloadExtras(), pause = true)
+        assertTrue("--sleep-interval" to "5" in paused)
+        assertTrue("--max-sleep-interval" to "10" in paused)
+        assertTrue("--sleep-requests" to "1" in paused)
+        assertFalse(Downloader.options(format, false, DownloadExtras()).any { it.first.startsWith("--sleep") })
+    }
+
+    @Test
     fun alwaysSingleVideo() {
         val options = Downloader.options(format, isAudio = false, DownloadExtras())
         assertEquals(1, options.count { it.first == "--no-playlist" })

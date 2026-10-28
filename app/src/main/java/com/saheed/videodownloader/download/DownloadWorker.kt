@@ -73,7 +73,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             // runInterruptible: if the worker is cancelled, the blocking yt-dlp call gets interrupted,
             // which makes youtubedl-android kill the yt-dlp process.
             val file = runInterruptible(Dispatchers.IO) {
-                Downloader.download(url, format, isAudio, extras, workDir) { progress ->
+                Downloader.download(url, format, isAudio, extras, inputData.getBoolean(KEY_PAUSE, false), workDir) { progress ->
                     val percent = progress.toInt()
                     if (percent != lastShown) { // yt-dlp reports many times a second; update only on change
                         lastShown = percent
@@ -133,6 +133,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_SUBTITLES = "subtitles"
         private const val KEY_CLIP_START = "clipStart"
         private const val KEY_CLIP_END = "clipEnd"
+        private const val KEY_PAUSE = "pause"
 
         /** How many videos of a playlist (or Retry all) download at the same time. */
         const val AT_A_TIME = 2
@@ -199,6 +200,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         // -1 = no clip (WorkManager input can't hold nulls for numbers).
                         KEY_CLIP_START to (extras.clip?.startSeconds ?: -1),
                         KEY_CLIP_END to (extras.clip?.endSeconds ?: -1),
+                        // Only grouped downloads (playlists, Retry all) pause; single ones start at once.
+                        KEY_PAUSE to (group != null),
                     )
                 )
                 // The group id as a tag lets DownloadStore cancel the whole group in one go.

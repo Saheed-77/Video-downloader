@@ -16,6 +16,7 @@ object Downloader {
      * Downloads [url] into [outDir] and returns the finished file.
      * Video: [format] is yt-dlp's `-f` value, merged into an MP4 by ffmpeg.
      * Audio ([isAudio]): the best audio track, converted to MP3 by ffmpeg.
+     * [pause]: wait a little first and between requests (playlists, Retry all), see [options].
      * Blocking: call it from a background thread. [onProgress] gets 0–100.
      */
     fun download(
@@ -23,12 +24,13 @@ object Downloader {
         format: String?,
         isAudio: Boolean,
         extras: DownloadExtras,
+        pause: Boolean,
         outDir: File,
         onProgress: (Float) -> Unit,
     ): File {
         outDir.mkdirs()
         val request = YoutubeDLRequest(url)
-        options(format, isAudio, extras).forEach { (name, value) ->
+        options(format, isAudio, extras, pause).forEach { (name, value) ->
             if (value == null) request.addOption(name) else request.addOption(name, value)
         }
         request.addOption("-o", File(outDir, "%(title).100B.%(ext)s").absolutePath)
@@ -48,7 +50,12 @@ object Downloader {
     fun mainFile(outDir: File): File? = outDir.listFiles()?.filter { it.isFile }?.maxByOrNull { it.length() }
 
     /** yt-dlp options as (name, value) pairs; value is null for plain flags. Kept separate so tests can check it. */
-    fun options(format: String?, isAudio: Boolean, extras: DownloadExtras): List<Pair<String, String?>> {
+    fun options(
+        format: String?,
+        isAudio: Boolean,
+        extras: DownloadExtras,
+        pause: Boolean = false,
+    ): List<Pair<String, String?>> {
         val options = mutableListOf<Pair<String, String?>>()
         if (isAudio) {
             options += "-f" to "bestaudio/best"
@@ -73,6 +80,14 @@ object Downloader {
             // Cut exactly at the chosen times. ffmpeg re-encodes the clip for that, so it's slower;
             // without it the clip would start at the nearest keyframe, a few seconds off.
             options += "--force-keyframes-at-cuts" to null
+        }
+        if (pause) {
+            // Many downloads in a row from one phone make YouTube answer "429 Too Many Requests /
+            // confirm you're not a bot". A random 5–10 s wait before each video, plus 1 s between
+            // yt-dlp's page requests, looks more like a person and makes that much less likely.
+            options += "--sleep-interval" to "5"
+            options += "--max-sleep-interval" to "10"
+            options += "--sleep-requests" to "1"
         }
         options += "--no-playlist" to null
         options += "--no-mtime" to null

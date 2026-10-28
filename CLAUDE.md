@@ -53,7 +53,6 @@ Full reasoning in `tasks/plan.md` → "Architecture Decisions" (numbered 1–15)
 
 ## Out of scope for now (future, after downloads work)
 
-- In-app download history screen
 - Settings option to choose the save folder
 - Login/cookies for Instagram/Facebook posts that require sign-in
 

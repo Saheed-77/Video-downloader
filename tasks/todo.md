@@ -39,7 +39,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] U6b: Change quality (running and cancelled/failed cards) — build + tests pass, phone check pending
 - [x] U7: Playlist download — build + tests pass, phone check pending (cancel stops the videos still waiting; Change quality hidden on active playlist videos)
 - [ ] **Checkpoint:** review extras
-- [ ] U8: Wrap-up — tests, lint, test-matrix rows, docs
+- [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; phone test of all of Phase 5 still to do
 
 ## Future (after downloads work)
 - [ ] In-app download history screen (now Phase 5, U3)

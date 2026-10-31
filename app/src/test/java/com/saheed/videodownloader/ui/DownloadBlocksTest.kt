@@ -42,4 +42,17 @@ class DownloadBlocksTest {
         assertEquals("6 videos · 2 done · 2 downloading · 1 waiting · 1 failed", playlistSummary(videos))
         assertEquals("1 video · 1 stopped", playlistSummary(listOf(row("x", DownloadStatus.PAUSED))))
     }
+
+    @Test
+    fun searchMatchesTitleOrPlaylistNameIgnoringCase() {
+        val rows = listOf(
+            row("Plankton and us"),
+            row("Me at the zoo"),
+            row("Ice talk", group = "A", title = "Celebrating planet Earth"),
+        )
+        assertEquals(listOf("Plankton and us"), filterRecords(rows, "plankton").map { it.id })
+        assertEquals(listOf("Ice talk"), filterRecords(rows, " EARTH ").map { it.id })
+        assertEquals(3, filterRecords(rows, "  ").size)
+        assertEquals(0, filterRecords(rows, "cats").size)
+    }
 }

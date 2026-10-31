@@ -24,6 +24,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -68,6 +69,8 @@ fun DownloadsTab() {
     val context = LocalContext.current
     val records by DownloadStore.records.collectAsState()
     val progress by DownloadStore.progress.collectAsState()
+    // What's typed in the search box; rememberSaveable keeps it when the screen rotates.
+    var query by rememberSaveable { mutableStateOf("") }
     // Non-null while the quality sheet is open for a row ("Change quality" or "Download another quality").
     var picking by remember { mutableStateOf<QualityPick?>(null) }
 
@@ -104,9 +107,39 @@ fun DownloadsTab() {
                     }
                 }
             }
+            // Search only helps once the list is longer than a screen.
+            if (records.size > 5 || query.isNotEmpty()) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text("Search downloads") },
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_search), contentDescription = null) },
+                    trailingIcon = if (query.isEmpty()) null else {
+                        {
+                            IconButton(onClick = { query = "" }) {
+                                Icon(painterResource(R.drawable.ic_close), contentDescription = "Clear search")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                )
+            }
+        }
+        val shown = filterRecords(records, query)
+        if (shown.isEmpty()) {
+            item {
+                Text(
+                    "No downloads match \"${query.trim()}\"",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
         }
         // key: lets Compose keep each block's state (an open menu, a hidden section) with the right one.
-        items(toBlocks(records), key = { it.key }) { block ->
+        items(toBlocks(shown), key = { it.key }) { block ->
             // One way to show a video card, used for single videos and inside playlist sections.
             val card: @Composable (DownloadRecord) -> Unit = { record ->
                 SwipeToRemove(record) {

@@ -46,3 +46,13 @@ fun playlistSummary(videos: List<DownloadRecord>): String {
     )
     return (parts.take(1) + parts.drop(1).filterNot { it.startsWith("0 ") }).joinToString(" · ")
 }
+
+/**
+ * The rows whose title or playlist name contains [query], ignoring upper/lower case.
+ * A blank query keeps everything.
+ */
+fun filterRecords(records: List<DownloadRecord>, query: String): List<DownloadRecord> {
+    val q = query.trim()
+    if (q.isEmpty()) return records
+    return records.filter { it.title.contains(q, ignoreCase = true) || it.groupTitle?.contains(q, ignoreCase = true) == true }
+}

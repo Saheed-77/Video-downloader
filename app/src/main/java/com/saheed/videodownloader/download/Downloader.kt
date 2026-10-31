@@ -17,6 +17,7 @@ object Downloader {
      * Video: [format] is yt-dlp's `-f` value, merged into an MP4 by ffmpeg.
      * Audio ([isAudio]): the best audio track, converted to MP3 by ffmpeg.
      * [pause]: wait a little first and between requests (playlists, Retry all), see [options].
+     * [cookies]: the sign-in cookies file for this site, if signed in (see [Cookies]).
      * Blocking: call it from a background thread. [onProgress] gets the percent, speed and time left.
      */
     fun download(
@@ -25,12 +26,13 @@ object Downloader {
         isAudio: Boolean,
         extras: DownloadExtras,
         pause: Boolean,
+        cookies: File?,
         outDir: File,
         onProgress: (Progress) -> Unit,
     ): File {
         outDir.mkdirs()
         val request = YoutubeDLRequest(url)
-        options(format, isAudio, extras, pause).forEach { (name, value) ->
+        options(format, isAudio, extras, pause, cookies).forEach { (name, value) ->
             if (value == null) request.addOption(name) else request.addOption(name, value)
         }
         request.addOption("-o", File(outDir, "%(title).100B.%(ext)s").absolutePath)
@@ -57,6 +59,7 @@ object Downloader {
         isAudio: Boolean,
         extras: DownloadExtras,
         pause: Boolean = false,
+        cookies: File? = null,
     ): List<Pair<String, String?>> {
         val options = mutableListOf<Pair<String, String?>>()
         if (isAudio) {
@@ -98,6 +101,8 @@ object Downloader {
             options += "--max-sleep-interval" to "10"
             options += "--sleep-requests" to "1"
         }
+        // Signed in to Instagram/Facebook (Settings → Accounts): send those cookies along.
+        cookies?.let { options += "--cookies" to it.absolutePath }
         options += "--no-playlist" to null
         options += "--no-mtime" to null
         return options

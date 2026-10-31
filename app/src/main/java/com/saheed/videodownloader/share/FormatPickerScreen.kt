@@ -53,6 +53,7 @@ import androidx.core.content.edit
 import coil3.compose.AsyncImage
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.R
+import com.saheed.videodownloader.download.Cookies
 import com.saheed.videodownloader.download.ErrorMapper
 import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DefaultQuality
@@ -123,6 +124,7 @@ fun FormatPicker(
                 EngineUpdater.updateIfDue(context)
                 // -J --flat-playlist: just the list of videos as JSON, without looking each one up.
                 val request = YoutubeDLRequest(url).addOption("-J").addOption("--flat-playlist")
+                Cookies.fileFor(context, url)?.let { request.addOption("--cookies", it.absolutePath) }
                 val json = EngineUpdater.useEngine { YoutubeDL.getInstance().execute(request).out }
                 Playlist.parse(json)
             }
@@ -139,6 +141,8 @@ fun FormatPicker(
                 EngineUpdater.updateIfDue(context)
                 // --no-playlist: a link opened from inside a playlist describes just that one video.
                 val request = YoutubeDLRequest(url).addOption("--no-playlist")
+                // Signed in to Instagram/Facebook: login-only posts need the cookies for the lookup too.
+                Cookies.fileFor(context, url)?.let { request.addOption("--cookies", it.absolutePath) }
                 EngineUpdater.useEngine { YoutubeDL.getInstance().getInfo(request) }
             }
             PickerState.Loaded(VideoMeta.fromVideoInfo(info), FormatParser.fromVideoInfo(info))

@@ -6,7 +6,7 @@ object ErrorMapper {
     const val NO_INTERNET = "No internet connection"
     const val PRIVATE = "This video is private"
     const val BOT_CHECK = "YouTube blocked this download for now. Try updating the downloader engine, or try again later."
-    const val LOGIN = "Login required (Instagram/Facebook often need this)"
+    const val LOGIN = "Login required. Sign in under Settings → Accounts."
     const val UNSUPPORTED = "Unsupported link"
     const val UNAVAILABLE = "This video is unavailable"
     const val NO_PLAYLIST = "This playlist doesn't exist or is private"

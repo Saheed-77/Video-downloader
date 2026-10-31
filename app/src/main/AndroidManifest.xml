@@ -47,6 +47,11 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
+        <!-- Sign in to Instagram/Facebook (Settings → Accounts). Only opened by this app. -->
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="false" />
+
         <!-- The Retry button on "Download failed" notifications. Not exported: only our own
              notifications can trigger it. -->
         <receiver

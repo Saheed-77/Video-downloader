@@ -1,5 +1,7 @@
 package com.saheed.videodownloader.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +23,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,6 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.AppSettings
+import com.saheed.videodownloader.download.Cookies
+import com.saheed.videodownloader.download.LoginSite
 import com.saheed.videodownloader.formats.DefaultQuality
 import com.saheed.videodownloader.update.EngineUpdater
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +63,8 @@ fun SettingsTab() {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
         DownloadsCard()
+
+        AccountsCard()
 
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -163,6 +170,48 @@ private fun DownloadsCard() {
                                 },
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Sign in to Instagram/Facebook so posts that need a login can be downloaded. Signing in opens
+ * the site's own login page inside the app ([LoginActivity]).
+ */
+@Composable
+private fun AccountsCard() {
+    val context = LocalContext.current
+    // Re-read after the login screen closes (the counter changes → this card redraws).
+    var refresh by remember { mutableIntStateOf(0) }
+    // Starts another screen and calls back when it closes: Compose's version of startActivityForResult.
+    val login = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { refresh++ }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Accounts", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "For posts that need a login. You sign in on the site itself; the app only keeps " +
+                    "the sign-in cookies on this phone. A spare account is safest.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            LoginSite.entries.forEach { site ->
+                val signedIn = remember(refresh) { Cookies.isSignedIn(context, site) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(site.label)
+                        Text(
+                            if (signedIn) "Signed in" else "Not signed in",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (signedIn) {
+                        TextButton(onClick = { Cookies.signOut(context, site); refresh++ }) { Text("Sign out") }
+                    } else {
+                        TextButton(onClick = { login.launch(LoginActivity.intent(context, site)) }) { Text("Sign in") }
                     }
                 }
             }

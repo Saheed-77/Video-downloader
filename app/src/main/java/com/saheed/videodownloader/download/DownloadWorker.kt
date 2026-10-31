@@ -74,7 +74,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             // runInterruptible: if the worker is cancelled, the blocking yt-dlp call gets interrupted,
             // which makes youtubedl-android kill the yt-dlp process.
             val file = runInterruptible(Dispatchers.IO) {
-                Downloader.download(url, format, isAudio, extras, inputData.getBoolean(KEY_PAUSE, false), workDir) { progress ->
+                Downloader.download(url, format, isAudio, extras, inputData.getBoolean(KEY_PAUSE, false), Cookies.fileFor(applicationContext, url), workDir) { progress ->
                     // yt-dlp reports many times a second; update only when the percent changes.
                     if (progress.percent != lastShown) {
                         lastShown = progress.percent

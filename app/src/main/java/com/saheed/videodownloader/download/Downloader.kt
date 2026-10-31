@@ -62,8 +62,15 @@ object Downloader {
             options += "-x" to null
             options += "--audio-format" to "mp3"
             options += "--audio-quality" to "0"
+            // Cover art (the video's thumbnail) and title/artist inside the MP3, so music players show them.
+            options += "--embed-thumbnail" to null
+            options += "--embed-metadata" to null
         } else {
             options += "-f" to (format ?: "bestvideo+bestaudio/best")
+            // *Format sort*: at the chosen resolution, prefer H.264 video and AAC audio, which play on
+            // every phone, TV and WhatsApp (YouTube often serves AV1/VP9 otherwise). Resolution comes
+            // first, so a 4K pick still gets 4K even when only VP9/AV1 exists there.
+            options += "-S" to "res,vcodec:h264,acodec:m4a"
             options += "--merge-output-format" to "mp4"
             // Not for clips: yt-dlp doesn't cut subtitles, so they'd start from 0:00 of the full video.
             if (extras.subtitles && extras.clip == null) {

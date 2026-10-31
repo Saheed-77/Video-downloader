@@ -70,6 +70,20 @@ class DownloaderOptionsTest {
     }
 
     @Test
+    fun videoPrefersH264AtTheChosenResolution() {
+        assertTrue("-S" to "res,vcodec:h264,acodec:m4a" in Downloader.options(format, false, DownloadExtras()))
+        assertFalse(Downloader.options(null, true, DownloadExtras()).any { it.first == "-S" })
+    }
+
+    @Test
+    fun mp3GetsCoverArtAndTags() {
+        val mp3 = Downloader.options(null, true, DownloadExtras())
+        assertTrue("--embed-thumbnail" to null in mp3)
+        assertTrue("--embed-metadata" to null in mp3)
+        assertFalse(Downloader.options(format, false, DownloadExtras()).any { it.first == "--embed-thumbnail" })
+    }
+
+    @Test
     fun alwaysSingleVideo() {
         val options = Downloader.options(format, isAudio = false, DownloadExtras())
         assertEquals(1, options.count { it.first == "--no-playlist" })

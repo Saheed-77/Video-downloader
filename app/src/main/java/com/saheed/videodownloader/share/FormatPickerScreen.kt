@@ -55,6 +55,7 @@ import com.saheed.videodownloader.App
 import com.saheed.videodownloader.R
 import com.saheed.videodownloader.download.ErrorMapper
 import com.saheed.videodownloader.formats.ClipRange
+import com.saheed.videodownloader.formats.DefaultQuality
 import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.FormatParser
 import com.saheed.videodownloader.formats.Playlist
@@ -87,11 +88,13 @@ private const val KEY_SUBTITLES = "subtitles"
  * it really has. Tapping a row calls [onPick] with the video's details, the chosen quality and the extras.
  * [initial]: the chips and clip times to start with (used by "Change quality").
  * A whole-playlist link shows the playlist instead, and a tap calls [onPickPlaylist].
+ * [autoPick]: pick this quality by itself as soon as the list is loaded (Settings → default quality).
  */
 @Composable
 fun FormatPicker(
     url: String,
     initial: DownloadExtras? = null,
+    autoPick: DefaultQuality? = null,
     onPickPlaylist: (playlist: Playlist, option: QualityOption, extras: DownloadExtras) -> Unit = { _, _, _ -> },
     onPick: (meta: VideoMeta, option: QualityOption, extras: DownloadExtras) -> Unit,
 ) {
@@ -163,6 +166,12 @@ fun FormatPicker(
         is PickerState.Failed -> ErrorCard(s.message, onRetry = { attempt++ })
 
         is PickerState.PlaylistLoaded -> {
+            // Runs once when the list appears; the share sheet then closes.
+            LaunchedEffect(s) {
+                autoPick?.pick(Playlist.QUALITY_OPTIONS)?.let { option ->
+                    onPickPlaylist(s.playlist, option, if (option.isAudio) DownloadExtras() else DownloadExtras(subtitles))
+                }
+            }
             val (audio, video) = Playlist.QUALITY_OPTIONS.partition { it.isAudio }
             LazyColumn {
                 item { PlaylistHeader(s.playlist) }
@@ -188,6 +197,11 @@ fun FormatPicker(
         }
 
         is PickerState.Loaded -> {
+            LaunchedEffect(s) {
+                autoPick?.pick(s.options)?.let { option ->
+                    onPick(s.meta, option, if (option.isAudio) DownloadExtras() else DownloadExtras(subtitles))
+                }
+            }
             val (audio, video) = s.options.partition { it.isAudio }
             val clipCheck = if (clipOn) ClipRange.check(clipStart, clipEnd, s.meta.durationSeconds) else null
             val clip = (clipCheck as? ClipRange.Result.Valid)?.range

@@ -14,6 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Switch
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
 import com.saheed.videodownloader.AppSettings
+import com.saheed.videodownloader.formats.DefaultQuality
 import com.saheed.videodownloader.update.EngineUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -111,11 +116,13 @@ fun SettingsTab() {
     }
 }
 
-/** Download settings: Wi-Fi only (and, from F6, the default quality for sharing). */
+/** Download settings: Wi-Fi only, and the default quality for sharing. */
 @Composable
 private fun DownloadsCard() {
     val context = LocalContext.current
     var wifiOnly by remember { mutableStateOf(AppSettings.wifiOnly(context)) }
+    var defaultQuality by remember { mutableStateOf(AppSettings.defaultQuality(context)) }
+    var menuOpen by remember { mutableStateOf(false) }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Downloads", style = MaterialTheme.typography.titleMedium)
@@ -133,6 +140,31 @@ private fun DownloadsCard() {
                     checked = wifiOnly,
                     onCheckedChange = { wifiOnly = it; AppSettings.setWifiOnly(context, it) },
                 )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("When sharing a link")
+                    Text(
+                        "Pick a quality to download in one tap from the Share menu.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Box {
+                    TextButton(onClick = { menuOpen = true }) { Text(defaultQuality.label) }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DefaultQuality.entries.forEach { choice ->
+                            DropdownMenuItem(
+                                text = { Text(choice.label) },
+                                onClick = {
+                                    menuOpen = false
+                                    defaultQuality = choice
+                                    AppSettings.setDefaultQuality(context, choice)
+                                },
+                            )
+                        }
+                    }
+                }
             }
         }
     }

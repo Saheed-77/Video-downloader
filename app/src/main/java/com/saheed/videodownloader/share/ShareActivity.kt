@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.saheed.videodownloader.AppSettings
 import com.saheed.videodownloader.download.DownloadWorker
+import com.saheed.videodownloader.formats.DefaultQuality
 import com.saheed.videodownloader.ui.AppTheme
 import com.saheed.videodownloader.ui.requestDownloadPermissions
 
@@ -20,6 +22,8 @@ class ShareActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestDownloadPermissions()
         val url = UrlExtractor.extract(intent.getStringExtra(Intent.EXTRA_TEXT))
+        // Settings → "When sharing a link": with a default, the sheet picks it by itself.
+        val autoPick = AppSettings.defaultQuality(this).takeIf { it != DefaultQuality.ASK }
 
         setContent {
             AppTheme {
@@ -27,6 +31,7 @@ class ShareActivity : ComponentActivity() {
                 PickerSheet(
                     url,
                     onDismiss = { finish() },
+                    autoPick = autoPick,
                     onPickPlaylist = { playlist, option, extras ->
                         DownloadWorker.enqueuePlaylist(this, playlist, option, extras)
                         Toast.makeText(this, "Downloading ${playlist.entries.size} videos…", Toast.LENGTH_SHORT).show()

@@ -44,6 +44,16 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] Pauses for playlist and Retry all downloads (Saheed asked, 28 Oct): random 5–10 s before each video + 1 s between yt-dlp requests (`--sleep-interval 5 --max-sleep-interval 10 --sleep-requests 1`); single downloads unchanged — checked on the S24 (yt-dlp logged "Sleeping 5–9 s" before each video)
 - [x] Playlist sections in the Downloads tab (Saheed asked, 28 Oct): playlist name + summary, Stop / Resume / Cancel / Retry for the whole playlist, ✕ and Retry for one video only. The app's own queue replaces WorkManager chains (still 2 at a time) — checked on the S24 (P16, P21–P23); Retry of a single playlist video (P24) not yet
 - [x] Clearing the list (Saheed asked, 28 Oct): Clear menu (finished / failed and cancelled / all except running) and swipe a card left to remove — checked on the S24 (P25, P26)
+
+## Next features (Saheed picked after the feature research, 31 Oct) — see plan in chat
+- [x] F1: Prefer H.264/AAC video at the chosen resolution (`-S res,vcodec:h264,acodec:m4a`) — build + tests pass, phone check pending
+- [x] F2: MP3s get cover art + title/artist (`--embed-thumbnail --embed-metadata`) — build + tests pass, phone check pending
+- [x] F3: Speed and time left on the card and notification — build + tests pass, phone check pending
+- [x] F4: "Download only on Wi-Fi" setting; downloads wait for the connection (WorkManager network constraint, retry ×5 on "No internet") — build + tests pass, phone check pending
+- [x] F5: Search box on the Downloads tab (more than 5 rows) — build + tests pass, phone check pending
+- [x] F6: "When sharing a link" default quality (Always ask / Best / 1080p / 720p / 480p / MP3) — build + tests pass, phone check pending
+- [x] F7: Sign in to Instagram/Facebook (Settings → Accounts, in-app WebView, cookies.txt for yt-dlp) — build + tests pass; Saheed signs in himself on the phone
+- [ ] Phone check of F1–F7, plus a Reddit and an X/Twitter video
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; on the S24 P11, P13–P16, P18 pass; P1–P10, P12, P17 still to run
 

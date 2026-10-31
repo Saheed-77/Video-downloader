@@ -71,6 +71,20 @@ Install over **wireless debugging** (PC hotspot) or Android Studio **Run ▶**; 
 | P25 | Clear menu | ⋮ next to "Downloads" → Clear finished / failed and cancelled / all except running; files stay in Downloads | ✅ 28 Oct: "Clear failed and cancelled" removed the cancelled playlist (26 → 18 rows), finished ones stayed |
 | P26 | Swipe to remove | Swipe a finished card left → row removed; running cards can't be swiped | ✅ 28 Oct after a fix (the next card had inherited the swiped state inside a section) |
 
+## 3c. Next features (F1–F7)
+
+| # | Check | How | Result |
+|---|-------|-----|--------|
+| F1 | H.264 video | Download a YouTube video at 720p → file is H.264 + AAC (plays on old phones/WhatsApp) | |
+| F2 | MP3 cover + tags | Download MP3 → Samsung Music shows the thumbnail as cover, title and artist | |
+| F3 | Speed / time left | Card and notification show "46% · 3.4 MB/s · 0:12 left" | |
+| F4 | Wi-Fi only / wait | Settings → Wi-Fi only on, Wi-Fi off → "Waiting for Wi-Fi…", starts when Wi-Fi is back. Airplane mode mid-download → "Waiting for internet…", then continues | |
+| F5 | Search | Downloads tab → type part of a title → list and sections filter | |
+| F6 | Default quality | Settings → When sharing a link → 720p; share from YouTube → sheet closes by itself, 720p download starts | |
+| F7 | Instagram/Facebook login | Settings → Accounts → Sign in (you type your details) → Done → "Signed in"; share a login-only reel → downloads; Sign out → "Not signed in" | |
+| S1 | Reddit | Share a Reddit video post → downloads with sound | |
+| S2 | X/Twitter | Share an X video → downloads | |
+
 ## 4. If something fails
 
 - Engine/download errors: try **Update downloader engine** first, then retry.

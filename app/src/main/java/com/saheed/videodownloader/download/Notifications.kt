@@ -46,12 +46,13 @@ object Notifications {
      * "Downloading <title> — 42%" with a Cancel button that runs [cancel].
      * [percent] < 0 shows an indeterminate bar (e.g. while starting).
      */
-    fun progress(context: Context, title: String, percent: Int, cancel: PendingIntent): Notification =
+    fun progress(context: Context, title: String, progress: Progress?, cancel: PendingIntent): Notification =
         NotificationCompat.Builder(context, CHANNEL_PROGRESS)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(title)
-            .setContentText(if (percent < 0) "Starting…" else "Downloading — $percent%")
-            .setProgress(100, percent.coerceAtLeast(0), percent < 0)
+            // "Downloading — 46% · 3.4 MB/s · 0:12 left"; a moving bar until the first percent arrives.
+            .setContentText(progress?.let { "Downloading — ${it.text}" } ?: "Starting…")
+            .setProgress(100, progress?.percent ?: 0, progress == null)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cancel", cancel)

@@ -17,7 +17,7 @@ object Downloader {
      * Video: [format] is yt-dlp's `-f` value, merged into an MP4 by ffmpeg.
      * Audio ([isAudio]): the best audio track, converted to MP3 by ffmpeg.
      * [pause]: wait a little first and between requests (playlists, Retry all), see [options].
-     * Blocking: call it from a background thread. [onProgress] gets 0–100.
+     * Blocking: call it from a background thread. [onProgress] gets the percent, speed and time left.
      */
     fun download(
         url: String,
@@ -26,7 +26,7 @@ object Downloader {
         extras: DownloadExtras,
         pause: Boolean,
         outDir: File,
-        onProgress: (Float) -> Unit,
+        onProgress: (Progress) -> Unit,
     ): File {
         outDir.mkdirs()
         val request = YoutubeDLRequest(url)
@@ -35,7 +35,9 @@ object Downloader {
         }
         request.addOption("-o", File(outDir, "%(title).100B.%(ext)s").absolutePath)
         val response = EngineUpdater.useEngine {
-            YoutubeDL.getInstance().execute(request) { progress, _, _ -> onProgress(progress) }
+            YoutubeDL.getInstance().execute(request) { progress, etaSeconds, line ->
+                onProgress(Progress(progress.toInt(), Progress.parseSpeed(line), etaSeconds.takeIf { it > 0 }))
+            }
         }
         // The last lines of yt-dlp's output show which steps ran (merging, embedding subtitles).
         Log.d(TAG, "yt-dlp output (end):\n" + response.out.takeLast(2000))

@@ -54,7 +54,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         // Each download gets its own cache folder, so finding the result and cleaning up is easy.
         val workDir = File(applicationContext.cacheDir, "downloads/$id")
         try {
-            setForeground(foregroundInfo(title, -1))
+            setForeground(foregroundInfo(title))
         } catch (e: IllegalStateException) {
             // Android 12+ can refuse to start foreground work once our screen has closed. The download
             // still runs (progress is shown as a normal notification), it's just easier for Android to stop.
@@ -69,13 +69,13 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             // which makes youtubedl-android kill the yt-dlp process.
             val file = runInterruptible(Dispatchers.IO) {
                 Downloader.download(url, format, isAudio, extras, inputData.getBoolean(KEY_PAUSE, false), workDir) { progress ->
-                    val percent = progress.toInt()
-                    if (percent != lastShown) { // yt-dlp reports many times a second; update only on change
-                        lastShown = percent
-                        DownloadStore.setProgress(recordId, percent)
+                    // yt-dlp reports many times a second; update only when the percent changes.
+                    if (progress.percent != lastShown) {
+                        lastShown = progress.percent
+                        DownloadStore.setProgress(recordId, progress)
                         Notifications.show(
                             applicationContext, notificationId,
-                            Notifications.progress(applicationContext, title, percent, cancel)
+                            Notifications.progress(applicationContext, title, progress, cancel)
                         )
                     }
                 }
@@ -111,8 +111,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         }
     }
 
-    private fun foregroundInfo(title: String, percent: Int): ForegroundInfo {
-        val notification = Notifications.progress(applicationContext, title, percent, cancelIntent)
+    private fun foregroundInfo(title: String): ForegroundInfo {
+        val notification = Notifications.progress(applicationContext, title, null, cancelIntent)
         // Android 10+ wants to know what kind of foreground work this is: a data transfer.
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ForegroundInfo(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)

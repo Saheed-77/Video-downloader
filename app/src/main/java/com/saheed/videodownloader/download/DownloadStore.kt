@@ -33,8 +33,8 @@ object DownloadStore {
     val records: StateFlow<List<DownloadRecord>> = _records
 
     // Percent per running download. Kept in memory only: it changes many times a second.
-    private val _progress = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val progress: StateFlow<Map<String, Int>> = _progress
+    private val _progress = MutableStateFlow<Map<String, Progress>>(emptyMap())
+    val progress: StateFlow<Map<String, Progress>> = _progress
 
     /** Loads the saved list. Called once from App.onCreate (and by tests with a temp file). */
     @Synchronized
@@ -70,7 +70,7 @@ object DownloadStore {
 
     fun find(id: String): DownloadRecord? = _records.value.firstOrNull { it.id == id }
 
-    fun setProgress(id: String, percent: Int) = _progress.update { it + (id to percent) }
+    fun setProgress(id: String, progress: Progress) = _progress.update { it + (id to progress) }
 
     fun clearProgress(id: String) = _progress.update { it - id }
 

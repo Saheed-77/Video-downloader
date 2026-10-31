@@ -55,6 +55,7 @@ import com.saheed.videodownloader.download.DownloadStatus
 import com.saheed.videodownloader.download.DownloadStore
 import com.saheed.videodownloader.download.DownloadWorker
 import com.saheed.videodownloader.download.FileActions
+import com.saheed.videodownloader.download.Progress
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.share.PickerSheet
 import kotlinx.coroutines.Dispatchers
@@ -143,7 +144,7 @@ private data class QualityPick(val record: DownloadRecord, val replaceOld: Boole
 @Composable
 private fun DownloadCard(
     record: DownloadRecord,
-    percent: Int?,
+    progress: Progress?,
     onChangeQuality: () -> Unit,
     onAnotherQuality: () -> Unit,
 ) {
@@ -174,7 +175,7 @@ private fun DownloadCard(
                 )
                 val failed = record.status == DownloadStatus.FAILED
                 Text(
-                    statusText(record, percent, context),
+                    statusText(record, progress, context),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -217,10 +218,10 @@ private fun DownloadCard(
         }
         if (record.isActive) {
             // No percent yet (waiting or starting): a moving bar instead of a stuck one.
-            if (percent == null) {
+            if (progress == null) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
             } else {
-                LinearProgressIndicator(progress = { percent / 100f }, modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(progress = { progress.percent / 100f }, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -377,11 +378,11 @@ private fun MoreMenu(vararg items: Pair<String, () -> Unit>) {
     }
 }
 
-private fun statusText(record: DownloadRecord, percent: Int?, context: android.content.Context): String {
-    // "720p · 1:30–2:45 · 46%" for a clip.
+private fun statusText(record: DownloadRecord, progress: Progress?, context: android.content.Context): String {
+    // "720p · 1:30–2:45 · 46% · 3.4 MB/s · 0:12 left" for a running clip.
     val parts = listOfNotNull(record.label, record.clip?.displayText) + when (record.status) {
         DownloadStatus.QUEUED -> listOf("Waiting…")
-        DownloadStatus.RUNNING -> listOf(percent?.let { "$it%" } ?: "Starting…")
+        DownloadStatus.RUNNING -> listOf(progress?.text ?: "Starting…")
         DownloadStatus.DONE -> listOfNotNull(
             record.sizeBytes?.let { QualityOption.formatSize(it) },
             DateUtils.formatDateTime(

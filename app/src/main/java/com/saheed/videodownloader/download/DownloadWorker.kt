@@ -4,12 +4,16 @@ import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.util.Log
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.saheed.videodownloader.AppSettings
 import com.saheed.videodownloader.formats.ClipRange
 import com.saheed.videodownloader.formats.DownloadExtras
 import com.saheed.videodownloader.formats.Playlist
@@ -19,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 /**
  * Runs one download in the background with *WorkManager* (Android's job scheduler for work that
@@ -61,7 +66,8 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
             Log.w(TAG, "Couldn't run as a foreground worker", e)
         }
 
-        DownloadStore.update(recordId) { it.copy(status = DownloadStatus.RUNNING) }
+        // error = null also clears a "Waiting for internet…" note from an earlier attempt.
+        DownloadStore.update(recordId) { it.copy(status = DownloadStatus.RUNNING, error = null) }
         return try {
             var lastShown = -1
             val cancel = cancelIntent
@@ -95,6 +101,12 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         } catch (e: Exception) {
             Log.e(TAG, "Download failed: $url", e)
             val message = ErrorMapper.toMessage(e.message)
+            if (message == ErrorMapper.NO_INTERNET && runAttemptCount < MAX_NETWORK_RETRIES) {
+                // The connection dropped: wait for it instead of failing. WorkManager runs this job
+                // again once the network constraint (see [start]) is met; the row shows why it waits.
+                DownloadStore.update(recordId) { it.copy(error = WAITING_FOR_INTERNET) }
+                return Result.retry()
+            }
             DownloadStore.update(recordId) { it.copy(status = DownloadStatus.FAILED, error = message) }
             Notifications.failed(applicationContext, resultNotificationId, title, message, recordId)
             // "Success" for WorkManager: the failure is already shown in the Downloads tab and the
@@ -132,6 +144,10 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val KEY_CLIP_END = "clipEnd"
         private const val KEY_PAUSE = "pause"
         private const val KEY_GROUP = "group"
+        private const val MAX_NETWORK_RETRIES = 5
+
+        /** Shown on a card while its download waits for the connection to come back. */
+        const val WAITING_FOR_INTERNET = "Waiting for internet…"
 
         /** How many videos of a playlist download at the same time. */
         const val AT_A_TIME = 2
@@ -187,6 +203,17 @@ class DownloadWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         KEY_PAUSE to (record.group != null),
                     )
                 )
+                // A *network constraint*: the job only runs while there's a connection, or Wi-Fi
+                // when "Download only on Wi-Fi" is on. Until then it simply waits.
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(
+                            if (AppSettings.wifiOnly(context)) NetworkType.UNMETERED else NetworkType.CONNECTED
+                        )
+                        .build()
+                )
+                // After a dropped connection: try again in 30 s, then 1 min, 2 min…
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
                 .build()
             WorkManager.getInstance(context).enqueue(request)
         }

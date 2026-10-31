@@ -11,6 +11,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Switch
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.App
+import com.saheed.videodownloader.AppSettings
 import com.saheed.videodownloader.update.EngineUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,6 +51,8 @@ fun SettingsTab() {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
+
+        DownloadsCard()
 
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -99,6 +105,33 @@ fun SettingsTab() {
                     "For personal use. Downloads run on this phone with yt-dlp and ffmpeg.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** Download settings: Wi-Fi only (and, from F6, the default quality for sharing). */
+@Composable
+private fun DownloadsCard() {
+    val context = LocalContext.current
+    var wifiOnly by remember { mutableStateOf(AppSettings.wifiOnly(context)) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Downloads", style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Download only on Wi-Fi")
+                    Text(
+                        "Saves mobile data. New downloads wait until you're on Wi-Fi.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                // A *Switch* is Material's on/off toggle.
+                Switch(
+                    checked = wifiOnly,
+                    onCheckedChange = { wifiOnly = it; AppSettings.setWifiOnly(context, it) },
                 )
             }
         }

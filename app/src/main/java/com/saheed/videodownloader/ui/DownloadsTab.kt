@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
+import com.saheed.videodownloader.AppSettings
 import com.saheed.videodownloader.R
 import com.saheed.videodownloader.download.DownloadRecord
 import com.saheed.videodownloader.download.DownloadStatus
@@ -381,8 +382,11 @@ private fun MoreMenu(vararg items: Pair<String, () -> Unit>) {
 private fun statusText(record: DownloadRecord, progress: Progress?, context: android.content.Context): String {
     // "720p · 1:30–2:45 · 46% · 3.4 MB/s · 0:12 left" for a running clip.
     val parts = listOfNotNull(record.label, record.clip?.displayText) + when (record.status) {
-        DownloadStatus.QUEUED -> listOf("Waiting…")
-        DownloadStatus.RUNNING -> listOf(progress?.text ?: "Starting…")
+        // Not started yet: say why when it's the network (no connection, or not on Wi-Fi).
+        DownloadStatus.QUEUED -> listOf(AppSettings.networkWait(context) ?: "Waiting…")
+        DownloadStatus.RUNNING -> listOf(
+            progress?.text ?: record.error ?: AppSettings.networkWait(context) ?: "Starting…"
+        )
         DownloadStatus.DONE -> listOfNotNull(
             record.sizeBytes?.let { QualityOption.formatSize(it) },
             DateUtils.formatDateTime(

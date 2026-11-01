@@ -70,8 +70,10 @@ class DownloaderOptionsTest {
     }
 
     @Test
-    fun videoPrefersH264AtTheChosenResolution() {
+    fun videoUsesTheChosenFormatsSort() {
         assertTrue("-S" to "res,vcodec:h264,acodec:m4a" in Downloader.options(format, false, DownloadExtras()))
+        val smallest = Downloader.options(format, false, DownloadExtras(), videoFormat = com.saheed.videodownloader.formats.VideoFormat.SMALLEST)
+        assertTrue("-S" to "res,vcodec:av01,acodec:opus" in smallest)
         assertFalse(Downloader.options(null, true, DownloadExtras()).any { it.first == "-S" })
     }
 

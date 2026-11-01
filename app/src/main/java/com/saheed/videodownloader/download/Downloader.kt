@@ -2,6 +2,7 @@ package com.saheed.videodownloader.download
 
 import android.util.Log
 import com.saheed.videodownloader.formats.DownloadExtras
+import com.saheed.videodownloader.formats.VideoFormat
 import com.saheed.videodownloader.update.EngineUpdater
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -18,6 +19,7 @@ object Downloader {
      * Audio ([isAudio]): the best audio track, converted to MP3 by ffmpeg.
      * [pause]: wait a little first and between requests (playlists, Retry all), see [options].
      * [cookies]: the sign-in cookies file for this site, if signed in (see [Cookies]).
+     * [videoFormat]: Smallest files or Most compatible (already resolved from "Auto").
      * Blocking: call it from a background thread. [onProgress] gets the percent, speed and time left.
      */
     fun download(
@@ -27,12 +29,13 @@ object Downloader {
         extras: DownloadExtras,
         pause: Boolean,
         cookies: File?,
+        videoFormat: VideoFormat,
         outDir: File,
         onProgress: (Progress) -> Unit,
     ): File {
         outDir.mkdirs()
         val request = YoutubeDLRequest(url)
-        options(format, isAudio, extras, pause, cookies).forEach { (name, value) ->
+        options(format, isAudio, extras, pause, cookies, videoFormat).forEach { (name, value) ->
             if (value == null) request.addOption(name) else request.addOption(name, value)
         }
         request.addOption("-o", File(outDir, "%(title).100B.%(ext)s").absolutePath)
@@ -60,6 +63,7 @@ object Downloader {
         extras: DownloadExtras,
         pause: Boolean = false,
         cookies: File? = null,
+        videoFormat: VideoFormat = VideoFormat.COMPATIBLE,
     ): List<Pair<String, String?>> {
         val options = mutableListOf<Pair<String, String?>>()
         if (isAudio) {
@@ -72,10 +76,10 @@ object Downloader {
             options += "--embed-metadata" to null
         } else {
             options += "-f" to (format ?: "bestvideo+bestaudio/best")
-            // *Format sort*: at the chosen resolution, prefer H.264 video and AAC audio, which play on
-            // every phone, TV and WhatsApp (YouTube often serves AV1/VP9 otherwise). Resolution comes
-            // first, so a 4K pick still gets 4K even when only VP9/AV1 exists there.
-            options += "-S" to "res,vcodec:h264,acodec:m4a"
+            // *Format sort*: at the chosen resolution, prefer the codec from Settings → Video format
+            // (H.264 for "Most compatible", AV1/VP9 for "Smallest files"). Resolution comes first, so a
+            // 4K pick still gets 4K even when only VP9/AV1 exists there.
+            options += "-S" to videoFormat.sort
             options += "--merge-output-format" to "mp4"
             // Not for clips: yt-dlp doesn't cut subtitles, so they'd start from 0:00 of the full video.
             if (extras.subtitles && extras.clip == null) {

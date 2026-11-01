@@ -36,6 +36,7 @@ import com.saheed.videodownloader.AppSettings
 import com.saheed.videodownloader.download.Cookies
 import com.saheed.videodownloader.download.LoginSite
 import com.saheed.videodownloader.formats.DefaultQuality
+import com.saheed.videodownloader.formats.VideoFormat
 import com.saheed.videodownloader.update.EngineUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -130,6 +131,8 @@ private fun DownloadsCard() {
     var wifiOnly by remember { mutableStateOf(AppSettings.wifiOnly(context)) }
     var defaultQuality by remember { mutableStateOf(AppSettings.defaultQuality(context)) }
     var menuOpen by remember { mutableStateOf(false) }
+    var videoFormat by remember { mutableStateOf(AppSettings.videoFormat(context)) }
+    var formatMenuOpen by remember { mutableStateOf(false) }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Downloads", style = MaterialTheme.typography.titleMedium)
@@ -173,6 +176,38 @@ private fun DownloadsCard() {
                     }
                 }
             }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("Video format")
+                    Text(
+                        videoFormat.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Box {
+                    TextButton(onClick = { formatMenuOpen = true }) { Text(videoFormat.label) }
+                    DropdownMenu(expanded = formatMenuOpen, onDismissRequest = { formatMenuOpen = false }) {
+                        VideoFormat.entries.forEach { choice ->
+                            DropdownMenuItem(
+                                text = { Text(choice.label) },
+                                onClick = {
+                                    formatMenuOpen = false
+                                    videoFormat = choice
+                                    AppSettings.setVideoFormat(context, choice)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            // What "Auto" turns into on this phone.
+            Text(
+                if (AppSettings.hasHardwareAv1) "This phone plays AV1 in hardware, so Auto uses the smallest files."
+                else "This phone can't play AV1 in hardware, so Auto uses the most compatible files.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

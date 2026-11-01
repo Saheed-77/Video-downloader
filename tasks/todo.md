@@ -54,6 +54,15 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] F6: "When sharing a link" default quality (Always ask / Best / 1080p / 720p / 480p / MP3) — build + tests pass, phone check pending
 - [x] F7: Sign in to Instagram/Facebook (Settings → Accounts, in-app WebView, cookies.txt for yt-dlp) — build + tests pass; Saheed signs in himself on the phone
 - [ ] Phone check of F1–F7, plus a Reddit and an X/Twitter video
+- [x] V1: "Video format" setting — Auto for this phone (AV1 when the phone decodes it in hardware, else H.264), Smallest files (AV1/VP9 + Opus), Most compatible (H.264 + AAC); picker sizes follow it — build + tests pass, phone check pending
+
+## Phase 6: Windows desktop app (Saheed chose: own app, Kotlin + Compose for Desktop, same repo)
+- [ ] D1: Move the pure logic into a `:shared` module used by the Android app
+- [ ] D2: `:desktop` module, a window with Home / Downloads / Settings
+- [ ] D3: Engine (official yt-dlp.exe + ffmpeg), lookup shows real qualities and thumbnail — **Checkpoint**
+- [ ] D4: Downloads with progress, Cancel, Retry, Open, to ~/Downloads
+- [ ] D5: Playlists with sections, Clear, search, drag-and-drop a link
+- [ ] D6: Packaged VideoDownloader.exe (zip for GitHub Releases) — **Checkpoint**
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; on the S24 P11, P13–P16, P18 pass; P1–P10, P12, P17 still to run
 

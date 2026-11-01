@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import coil3.compose.AsyncImage
 import com.saheed.videodownloader.App
+import com.saheed.videodownloader.AppSettings
 import com.saheed.videodownloader.R
 import com.saheed.videodownloader.download.Cookies
 import com.saheed.videodownloader.download.ErrorMapper
@@ -145,7 +146,7 @@ fun FormatPicker(
                 Cookies.fileFor(context, url)?.let { request.addOption("--cookies", it.absolutePath) }
                 EngineUpdater.useEngine { YoutubeDL.getInstance().getInfo(request) }
             }
-            PickerState.Loaded(VideoMeta.fromVideoInfo(info), FormatParser.fromVideoInfo(info))
+            PickerState.Loaded(VideoMeta.fromVideoInfo(info), FormatParser.fromVideoInfo(info, AppSettings.effectiveVideoFormat(context)))
         } catch (e: Exception) {
             // The friendly message hides the details, so keep the real error in the log.
             Log.w(TAG, "Lookup failed for $url: $e", e)

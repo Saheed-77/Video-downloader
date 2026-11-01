@@ -15,7 +15,7 @@ data class FormatInfo(
 /** Turns yt-dlp's format list into the rows of the quality menu. */
 object FormatParser {
 
-    fun fromVideoInfo(info: VideoInfo): List<QualityOption> = parse(
+    fun fromVideoInfo(info: VideoInfo, prefer: VideoFormat = VideoFormat.COMPATIBLE): List<QualityOption> = parse(
         info.formats.orEmpty().map {
             FormatInfo(
                 width = it.width,
@@ -24,15 +24,17 @@ object FormatParser {
                 acodec = it.acodec,
                 sizeBytes = if (it.fileSize > 0) it.fileSize else it.fileSizeApproximate,
             )
-        }
+        },
+        prefer,
     )
 
     /**
      * Returns: "Best quality", then one row per resolution the video really has (highest first),
-     * then "MP3 audio". Sizes are estimates: the biggest file at that resolution, plus the best
-     * audio track when the video file has no sound of its own (YouTube keeps them separate).
+     * then "MP3 audio". Sizes are estimates: the file at that resolution in the codec [prefer] asks
+     * for (the biggest one if that codec isn't there), plus the best audio track when the video file
+     * has no sound of its own (YouTube keeps them separate).
      */
-    fun parse(formats: List<FormatInfo>): List<QualityOption> {
+    fun parse(formats: List<FormatInfo>, prefer: VideoFormat = VideoFormat.COMPATIBLE): List<QualityOption> {
         val audioOnly = formats.filter { it.vcodec == "none" && it.acodec != null && it.acodec != "none" }
         val bestAudioSize = audioOnly.maxOfOrNull { it.sizeBytes } ?: 0L
 
@@ -44,11 +46,12 @@ object FormatParser {
         val rows = video
             .groupBy { pLabel(it) }
             .map { (p, group) ->
-                val biggest = group.maxBy { it.sizeBytes }
+                // The format yt-dlp will pick: preferred codec first, then the biggest of those.
+                val chosen = group.minWith(compareBy<FormatInfo> { prefer.codecRank(it.vcodec) }.thenByDescending { it.sizeBytes })
                 val size = when {
-                    biggest.sizeBytes <= 0 -> null
-                    biggest.acodec == "none" -> biggest.sizeBytes + bestAudioSize
-                    else -> biggest.sizeBytes
+                    chosen.sizeBytes <= 0 -> null
+                    chosen.acodec == "none" -> chosen.sizeBytes + bestAudioSize
+                    else -> chosen.sizeBytes
                 }
                 p to QualityOption.forHeight("${p}p", group.maxOf { it.height }, size, resolution = p)
             }

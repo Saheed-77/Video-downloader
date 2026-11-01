@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.saheed.videodownloader.download.ProgressTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-01T12:40:02.175Z" hostname="DEVBOT" time="0.033">
-  <properties/>
-  <testcase name="readsTheSpeedFromYtDlpsLine" classname="com.saheed.videodownloader.download.ProgressTest" time="0.012"/>
-  <testcase name="cardText" classname="com.saheed.videodownloader.download.ProgressTest" time="0.02"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

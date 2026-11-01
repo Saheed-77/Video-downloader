@@ -26,6 +26,8 @@ dependencies {
     implementation(libs.compose.material3.desktop)
     // Lets coroutines update the window (the "Main" thread on desktop is Swing's).
     implementation(libs.kotlinx.coroutines.swing)
+    // JNA: lets Kotlin call Windows functions directly (used to colour the title bar).
+    implementation(libs.jna)
     // Android has org.json built in; the desktop needs the real library.
     implementation(libs.json)
     // Thumbnails, same library as on Android.

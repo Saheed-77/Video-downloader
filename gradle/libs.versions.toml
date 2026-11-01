@@ -14,6 +14,7 @@ json = "20260814"
 composeMultiplatform = "1.12.2"
 composeMaterial3Desktop = "1.9.0"
 coroutines = "1.11.0"
+jna = "5.18.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,6 +33,7 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 json = { group = "org.json", name = "json", version.ref = "json" }
 compose-material3-desktop = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "composeMaterial3Desktop" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "coroutines" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]

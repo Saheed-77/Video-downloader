@@ -66,6 +66,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] L1: New logos and a Theme setting (Settings → Look → Theme on Android, Settings → Theme on the PC).
   Play-down (violet/pink, the default), Midnight (navy with lime/cyan, always dark) and, on Android 12+, Wallpaper colours.
   The icon follows the theme: Android swaps launcher *activity aliases*; the desktop window/taskbar icon changes live, the .exe keeps Play-down.
+  Desktop title bar (minimise/maximise/close strip) is coloured to match through Windows' DWM, called with JNA (Windows 11; Windows 10 gets a plain dark/light bar).
   Checked on this PC (switch, restart keeps it, .exe icon). **Phone check pending:** colours, status-bar icons on Midnight, launcher icon.
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; on the S24 P11, P13–P16, P18 pass; P1–P10, P12, P17 still to run

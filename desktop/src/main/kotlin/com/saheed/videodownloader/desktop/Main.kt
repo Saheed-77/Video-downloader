@@ -84,7 +84,10 @@ fun main() = application {
                 }
             }
         }
-        DesktopTheme { App() }
+        DesktopTheme {
+            MatchTitleBar(window)
+            App()
+        }
     }
 }
 

@@ -1,3 +1,4 @@
 <resources>
-    <color name="ic_launcher_background">#D32F2F</color>
+    <!-- The Midnight icon's dark navy tile. (Play-down's gradient tile is drawable/ic_launcher_background.) -->
+    <color name="ic_launcher_midnight_background">#0F172A</color>
 </resources>

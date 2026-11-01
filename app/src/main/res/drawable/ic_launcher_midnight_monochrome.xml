@@ -1,0 +1,19 @@
+<!-- Midnight logo in one colour, for Android 13+ "themed icons" (the launcher tints it). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,32V59M42,48L54,60L66,48" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M36,66v3a6,6 0,0 0,6 6h24a6,6 0,0 0,6 -6v-3" />
+</vector>

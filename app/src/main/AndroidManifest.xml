@@ -21,12 +21,32 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" />
+
+        <!-- Two launcher entries for MainActivity, one per icon (Settings → Theme turns one on,
+             the other off; see AppIcon). Play-down is on by default. -->
+        <activity-alias
+            android:name=".LauncherPlayDown"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherMidnight"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_midnight"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- Share target: shows up in other apps' Share menus for shared text (links). -->
         <activity

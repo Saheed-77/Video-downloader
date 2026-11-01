@@ -1,13 +1,18 @@
-<!-- App logo: a white "download" arrow over a tray. Replace via Android Studio > New > Image Asset. -->
+<!-- Play-down logo: a rounded play button turned to point down onto a bar (white).
+     Drawn on the 108dp adaptive-icon canvas; everything stays inside the 66dp safe circle. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- A stroke in the same colour with round joins gives the triangle its soft corners. -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M49,32h10v22h9l-14,16l-14,-16h9z" />
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="8"
+        android:strokeLineJoin="round"
+        android:pathData="M36,36H72L54,62Z" />
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M36,70h6v6h24v-6h6v12h-36z" />
+        android:pathData="M39.5,70h29a3.5,3.5 0,0 1,0 7h-29a3.5,3.5 0,0 1,0 -7z" />
 </vector>

@@ -1,17 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Plain icon for Android 7.x (no adaptive icons there): red circle + the same arrow. -->
+<!-- Plain icon for Android 7.x (no adaptive icons there): the Play-down logo in a circle. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="48dp"
     android:height="48dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="@color/ic_launcher_background"
-        android:pathData="M54,4a50,50 0,1 1,0 100a50,50 0,1 1,0 -100z" />
+    <path android:pathData="M54,4a50,50 0,1 1,0 100a50,50 0,1 1,0 -100z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="4"
+                android:startY="4"
+                android:endX="104"
+                android:endY="104"
+                android:startColor="#7B2FF7"
+                android:endColor="#F107A3" />
+        </aapt:attr>
+    </path>
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M49,32h10v22h9l-14,16l-14,-16h9z" />
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="8"
+        android:strokeLineJoin="round"
+        android:pathData="M36,36H72L54,62Z" />
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M36,70h6v6h24v-6h6v12h-36z" />
+        android:pathData="M39.5,70h29a3.5,3.5 0,0 1,0 7h-29a3.5,3.5 0,0 1,0 -7z" />
 </vector>

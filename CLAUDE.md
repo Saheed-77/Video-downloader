@@ -45,6 +45,7 @@ Full reasoning in `tasks/plan.md` → "Architecture Decisions" (numbered 1–15)
 - Hosting: **GitHub only** (code + APKs in GitHub Releases). No Vercel/Netlify — not needed and unsuitable.
 - iPhone: Shortcut + a-Shell. **No PWA** (can't run yt-dlp, blocked by CORS, can't appear in the iOS share sheet). Videos → Photos, MP3s → Files. Fixed quality menu (Best/1080p/720p/480p/360p/MP3/Update downloader).
 - iPhone fallback (only if Task 10 fails): small home-PC server (could be Spring Boot) running yt-dlp; Shortcut sends the link, saves the result to Photos.
+- Look: Settings → **Theme** picks colours and icon together — **Play-down** (default), **Midnight**, and **Wallpaper colours** (Android 12+ only, Play-down icon). Android swaps the launcher icon with two `activity-alias` entries (`AppIcon`); desktop icons are PNG/ICO drawn by `desktop/icons/make_icons.py`.
 
 ## Useful yt-dlp format strings
 

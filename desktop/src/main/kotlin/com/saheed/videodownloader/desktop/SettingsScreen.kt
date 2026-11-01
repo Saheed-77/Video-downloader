@@ -21,12 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.saheed.videodownloader.formats.VideoFormat
+import com.saheed.videodownloader.ui.ThemeChoice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.swing.JFileChooser
 
-/** Settings: video format, where downloads go, and the yt-dlp engine. */
+/** Settings: theme, video format, where downloads go, and the yt-dlp engine. */
 @Composable
 fun SettingsScreen() {
     val scope = rememberCoroutineScope()
@@ -38,6 +39,26 @@ fun SettingsScreen() {
 
     Column(Modifier.widthIn(max = 720.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
+
+        SettingsCard("Theme") {
+            // The colours and the window/taskbar icon change together. Wallpaper colours are Android-only.
+            listOf(ThemeChoice.PLAY_DOWN, ThemeChoice.MIDNIGHT).forEach { choice ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = ThemeState.choice == choice,
+                        onClick = { ThemeState.choice = choice; DesktopSettings.theme = choice },
+                    )
+                    Column {
+                        Text(choice.label)
+                        Text(
+                            choice.description.replace("your phone", "Windows"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
 
         SettingsCard("Video format") {
             // No "Auto" on the PC: Windows can't reliably say whether it plays AV1 smoothly.

@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.saheed.videodownloader.download.DownloadStore
 import com.saheed.videodownloader.download.Notifications
+import com.saheed.videodownloader.ui.ThemeState
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
@@ -19,6 +20,7 @@ class App : Application() {
         super.onCreate()
         Notifications.createChannels(this)
         DownloadStore.init(File(filesDir, "downloads.json"))
+        ThemeState.choice = AppSettings.theme(this)
         try {
             YoutubeDL.getInstance().init(this)
             FFmpeg.getInstance().init(this)

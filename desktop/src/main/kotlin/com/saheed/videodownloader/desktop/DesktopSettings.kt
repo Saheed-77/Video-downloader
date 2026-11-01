@@ -1,6 +1,7 @@
 package com.saheed.videodownloader.desktop
 
 import com.saheed.videodownloader.formats.VideoFormat
+import com.saheed.videodownloader.ui.ThemeChoice
 import java.io.File
 import java.util.Properties
 
@@ -30,6 +31,11 @@ object DesktopSettings {
         get() = props.getProperty("videoFormat")?.let { name -> VideoFormat.entries.firstOrNull { it.name == name } }
             ?.takeIf { it != VideoFormat.AUTO } ?: VideoFormat.COMPATIBLE
         set(value) { props.setProperty("videoFormat", value.name); save() }
+
+    /** Settings → Theme: Play-down (default) or Midnight. Wallpaper colours are Android-only. */
+    var theme: ThemeChoice
+        get() = ThemeChoice.fromName(props.getProperty("theme")).takeIf { it != ThemeChoice.WALLPAPER } ?: ThemeChoice.PLAY_DOWN
+        set(value) { props.setProperty("theme", value.name); save() }
 
     /** The folder downloads are saved to; the user's Downloads folder by default. */
     var downloadDir: File

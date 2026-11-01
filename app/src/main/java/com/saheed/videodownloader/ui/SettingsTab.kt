@@ -1,5 +1,6 @@
 package com.saheed.videodownloader.ui
 
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +64,8 @@ fun SettingsTab() {
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
 
+        LookCard()
+
         DownloadsCard()
 
         AccountsCard()
@@ -125,6 +128,54 @@ fun SettingsTab() {
 }
 
 /** Download settings: Wi-Fi only, and the default quality for sharing. */
+/** Settings → Look → Theme: the app's colours and its home-screen icon. */
+@Composable
+private fun LookCard() {
+    val context = LocalContext.current
+    var menuOpen by remember { mutableStateOf(false) }
+    // Wallpaper colours need Android 12+, so older phones only get the two fixed themes.
+    val choices = ThemeChoice.entries.filter { it != ThemeChoice.WALLPAPER || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Look", style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Theme")
+                    Text(
+                        ThemeState.choice.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Box {
+                    TextButton(onClick = { menuOpen = true }) { Text(ThemeState.choice.label) }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        choices.forEach { choice ->
+                            DropdownMenuItem(
+                                text = { Text(choice.label) },
+                                onClick = {
+                                    menuOpen = false
+                                    if (choice != ThemeState.choice) {
+                                        ThemeState.choice = choice
+                                        AppSettings.setTheme(context, choice)
+                                        AppIcon.apply(context, choice)
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            Text(
+                "The home-screen icon changes too. Your launcher may take a few seconds, and on some phones " +
+                    "you'll need to add the icon to the home screen again from the app list.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 @Composable
 private fun DownloadsCard() {
     val context = LocalContext.current

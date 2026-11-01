@@ -26,7 +26,7 @@ class ShareActivity : ComponentActivity() {
         val autoPick = AppSettings.defaultQuality(this).takeIf { it != DefaultQuality.ASK }
 
         setContent {
-            AppTheme {
+            AppTheme(systemBars = false) {
                 // Swiping the sheet away closes the activity and returns to the other app.
                 PickerSheet(
                     url,

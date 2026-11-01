@@ -48,6 +48,8 @@ compose.desktop {
             // The packaged app carries its own trimmed-down Java with only these parts
             // (from `gradlew :desktop:suggestRuntimeModules`, plus jdk.crypto.ec for HTTPS on Java 21).
             modules("java.instrument", "java.net.http", "jdk.unsupported", "jdk.crypto.ec")
+            // The .exe's icon (Play-down); drawn by icons/make_icons.py. The window icon follows the theme.
+            windows { iconFile.set(project.file("icons/VideoDownloader.ico")) }
         }
     }
 }

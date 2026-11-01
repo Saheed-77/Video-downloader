@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.core.content.edit
 import com.saheed.videodownloader.formats.DefaultQuality
 import com.saheed.videodownloader.formats.VideoFormat
+import com.saheed.videodownloader.ui.ThemeChoice
 
 /** The app's settings (Settings tab), saved in SharedPreferences. */
 object AppSettings {
@@ -15,6 +16,7 @@ object AppSettings {
     private const val KEY_WIFI_ONLY = "wifiOnly"
     private const val KEY_DEFAULT_QUALITY = "defaultQuality"
     private const val KEY_VIDEO_FORMAT = "videoFormat"
+    private const val KEY_THEME = "theme"
 
     /** Download only on Wi-Fi (an *unmetered* network); off by default. */
     fun wifiOnly(context: Context): Boolean = prefs(context).getBoolean(KEY_WIFI_ONLY, false)
@@ -38,6 +40,11 @@ object AppSettings {
 
     fun setVideoFormat(context: Context, format: VideoFormat) =
         prefs(context).edit { putString(KEY_VIDEO_FORMAT, format.name) }
+
+    /** Settings → "Theme": colours and icon; Play-down by default. */
+    fun theme(context: Context): ThemeChoice = ThemeChoice.fromName(prefs(context).getString(KEY_THEME, null))
+
+    fun setTheme(context: Context, theme: ThemeChoice) = prefs(context).edit { putString(KEY_THEME, theme.name) }
 
     /** The format downloads really use: "Auto" turned into Smallest or Most compatible for this phone. */
     fun effectiveVideoFormat(context: Context): VideoFormat = videoFormat(context).resolve(hasHardwareAv1)

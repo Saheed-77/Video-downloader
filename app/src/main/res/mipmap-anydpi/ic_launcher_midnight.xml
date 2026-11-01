@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plain Midnight icon for Android 7.x: the arrow and tray in a navy circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/ic_launcher_midnight_background"
+        android:pathData="M54,4a50,50 0,1 1,0 100a50,50 0,1 1,0 -100z" />
+    <path
+        android:strokeColor="#A3E635"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,32V59M42,48L54,60L66,48" />
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M36,66v3a6,6 0,0 0,6 6h24a6,6 0,0 0,6 -6v-3" />
+</vector>

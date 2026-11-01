@@ -40,7 +40,7 @@ class CookiesTest {
     @Test
     fun downloadsSendTheCookiesFile() {
         val file = java.io.File("cookies-instagram.txt")
-        val options = Downloader.options("best", false, com.saheed.videodownloader.formats.DownloadExtras(), cookies = file)
+        val options = YtDlpOptions.build("best", false, com.saheed.videodownloader.formats.DownloadExtras(), cookies = file)
         assertTrue("--cookies" to file.absolutePath in options)
     }
 }

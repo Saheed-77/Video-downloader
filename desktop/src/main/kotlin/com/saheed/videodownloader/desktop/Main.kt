@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,7 +50,8 @@ fun DesktopTheme(content: @Composable () -> Unit) {
 @Composable
 fun App() {
     var tab by remember { mutableStateOf(Tab.HOME) }
-    var picked by remember { mutableStateOf<String?>(null) }
+    val records by DesktopDownloads.records.collectAsState()
+    val active = records.count { it.isActive }
     Surface(Modifier.fillMaxSize()) {
         Row {
             NavigationRail(Modifier.fillMaxHeight()) {
@@ -58,25 +60,25 @@ fun App() {
                         selected = tab == t,
                         onClick = { tab = t },
                         icon = { Text(t.label.first().toString(), style = MaterialTheme.typography.titleMedium) },
-                        label = { Text(t.label) },
+                        // The number of running downloads next to "Downloads".
+                        label = { Text(if (t == Tab.DOWNLOADS && active > 0) "${t.label} ($active)" else t.label) },
                     )
                 }
             }
             Box(Modifier.fillMaxSize().padding(24.dp)) {
                 when (tab) {
-                    // Downloading starts in D4; for now a pick just says what would be downloaded.
                     Tab.HOME -> HomeScreen(
-                        onPickVideo = { _, meta, option -> picked = "${option.label}: ${meta.title}" },
-                        onPickPlaylist = { playlist, option -> picked = "${option.label}: ${playlist.title}" },
+                        onPickVideo = { url, meta, option ->
+                            DesktopDownloads.enqueue(url, meta.title, meta.thumbnailUrl, option)
+                            tab = Tab.DOWNLOADS
+                        },
+                        onPickPlaylist = { playlist, option ->
+                            DesktopDownloads.enqueuePlaylist(playlist, option)
+                            tab = Tab.DOWNLOADS
+                        },
                     )
-                    else -> Text("${tab.label} — coming in the next steps", style = MaterialTheme.typography.headlineSmall)
-                }
-                picked?.let {
-                    Text(
-                        "Picked $it (downloading comes next)",
-                        modifier = Modifier.align(Alignment.BottomStart),
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    Tab.DOWNLOADS -> DownloadsScreen()
+                    Tab.SETTINGS -> SettingsScreen()
                 }
             }
         }

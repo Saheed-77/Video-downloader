@@ -36,6 +36,11 @@ object DesktopSettings {
         get() = props.getProperty("downloadDir")?.let(::File) ?: File(System.getProperty("user.home"), "Downloads")
         set(value) { props.setProperty("downloadDir", value.absolutePath); save() }
 
+    /** The Subtitles choice in the quality list, remembered like on Android. */
+    var subtitles: Boolean
+        get() = props.getProperty("subtitles") == "true"
+        set(value) { props.setProperty("subtitles", value.toString()); save() }
+
     /** When yt-dlp was last updated (milliseconds), or null if never. */
     var lastEngineUpdate: Long?
         get() = props.getProperty("lastEngineUpdate")?.toLongOrNull()

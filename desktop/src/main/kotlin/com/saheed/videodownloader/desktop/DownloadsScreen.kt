@@ -1,6 +1,20 @@
 package com.saheed.videodownloader.desktop
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.saheed.videodownloader.ui.DownloadBlock
+import com.saheed.videodownloader.ui.filterRecords
+import com.saheed.videodownloader.ui.playlistSummary
+import com.saheed.videodownloader.ui.toBlocks
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,22 +49,113 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** Downloads: what's running (with progress and Cancel) and what's done (Open, Show in folder). */
+/**
+ * Downloads: what's running (with progress and Cancel) and what's done (Open, Show in folder).
+ * Playlists get their own section, built with the same shared code as on Android.
+ */
 @Composable
 fun DownloadsScreen() {
     val records by DesktopDownloads.records.collectAsState()
     val progress by DesktopDownloads.progress.collectAsState()
+    var query by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Downloads", style = MaterialTheme.typography.headlineMedium)
-        if (records.isEmpty()) {
-            Text(
-                "Your downloads will show here. Paste a link on Home.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Downloads", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+            // Only the buttons that would do something right now.
+            if (records.any { it.isActive || it.status == DownloadStatus.PAUSED }) {
+                OutlinedButton(onClick = DesktopDownloads::cancelAll) { Text("Cancel all") }
+            }
+            if (records.any { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }) {
+                OutlinedButton(onClick = DesktopDownloads::retryAll) { Text("Retry all") }
+            }
+            ClearMenu(records)
+        }
+        if (records.size > 5 || query.isNotEmpty()) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text("Search downloads") },
+                singleLine = true,
+                trailingIcon = if (query.isEmpty()) null else { { TextButton(onClick = { query = "" }) { Text("Clear") } } },
+                modifier = Modifier.fillMaxWidth(),
             )
         }
+        val shown = filterRecords(records, query)
+        when {
+            records.isEmpty() -> Text(
+                "Your downloads will show here. Paste a link on Home, or drop one onto this window.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            shown.isEmpty() -> Text("No downloads match \"${query.trim()}\"", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(records, key = { it.id }) { record -> DownloadCard(record, progress[record.id]) }
+            items(toBlocks(shown), key = { it.key }) { block ->
+                when (block) {
+                    is DownloadBlock.Single -> DownloadCard(block.record, progress[block.record.id])
+                    is DownloadBlock.Playlist -> PlaylistSection(block, progress)
+                }
+            }
+        }
+    }
+}
+
+/** A playlist: its name, a summary, buttons for the whole playlist, and its videos (click the name to hide them). */
+@Composable
+private fun PlaylistSection(playlist: DownloadBlock.Playlist, progress: Map<String, Progress>) {
+    var expanded by remember(playlist.group) { mutableStateOf(true) }
+    val videos = playlist.videos
+    val anyActive = videos.any { it.isActive }
+    val anyPaused = videos.any { it.status == DownloadStatus.PAUSED }
+    val anyStopped = videos.any { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { expanded = !expanded }
+                        .padding(4.dp)
+                ) {
+                    Text(playlist.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        playlistSummary(videos) + if (expanded) "" else " · click to show",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (anyActive) TextButton(onClick = { DesktopDownloads.stopGroup(playlist.group) }) { Text("Stop") }
+                if (anyPaused) TextButton(onClick = { DesktopDownloads.resumeGroup(playlist.group) }) { Text("Resume") }
+                if (anyActive || anyPaused) TextButton(onClick = { DesktopDownloads.cancelGroup(playlist.group) }) { Text("Cancel") }
+                if (anyStopped) TextButton(onClick = { DesktopDownloads.retryGroup(playlist.group) }) { Text("Retry") }
+                if (!anyActive) TextButton(onClick = { DesktopDownloads.removeGroup(playlist.group) }) { Text("Remove playlist") }
+            }
+            // key(): ties each card's state to its own video.
+            if (expanded) videos.forEach { video -> key(video.id) { DownloadCard(video, progress[video.id]) } }
+        }
+    }
+}
+
+/** "Clear…": removes many rows at once. The files stay in the download folder. */
+@Composable
+private fun ClearMenu(records: List<DownloadRecord>) {
+    val finished = setOf(DownloadStatus.DONE)
+    val stopped = setOf(DownloadStatus.FAILED, DownloadStatus.CANCELLED)
+    val notRunning = finished + stopped + DownloadStatus.PAUSED
+    val items = listOfNotNull(
+        ("Clear finished" to finished).takeIf { records.any { it.status in finished } },
+        ("Clear failed and cancelled" to stopped).takeIf { records.any { it.status in stopped } },
+        ("Clear all except running" to notRunning).takeIf { records.any { it.status in notRunning } },
+    )
+    if (items.isEmpty()) return
+    var open by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { open = true }) { Text("Clear…") }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            items.forEach { (label, statuses) ->
+                DropdownMenuItem(text = { Text(label) }, onClick = { open = false; DesktopDownloads.clear(statuses) })
+            }
         }
     }
 }

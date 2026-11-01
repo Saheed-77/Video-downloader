@@ -137,6 +137,61 @@ object DesktopDownloads {
     /** Removes a row; the file stays in the download folder. */
     fun remove(id: String) = save(_records.value.filterNot { it.id == id })
 
+    // ---- A whole playlist, and everything ----
+
+    /** "Stop": running and waiting videos become Stopped; nothing more starts until Resume. */
+    fun stopGroup(group: String) =
+        markThenKill({ it.group == group }, setOf(DownloadStatus.RUNNING, DownloadStatus.QUEUED), DownloadStatus.PAUSED)
+
+    /** "Cancel" on a playlist: everything not finished becomes Cancelled. */
+    fun cancelGroup(group: String) = markThenKill({ it.group == group }, UNFINISHED, DownloadStatus.CANCELLED)
+
+    /** "Cancel all": every running, waiting or stopped download. */
+    fun cancelAll() = markThenKill({ true }, UNFINISHED, DownloadStatus.CANCELLED)
+
+    /** "Resume": stopped videos wait again (they restart from the beginning) and the queue starts them. */
+    fun resumeGroup(group: String) = requeue(group, setOf(DownloadStatus.PAUSED))
+
+    /** "Retry" on a playlist: its failed and cancelled videos wait again, in place. */
+    fun retryGroup(group: String) = requeue(group, setOf(DownloadStatus.FAILED, DownloadStatus.CANCELLED))
+
+    /** "Retry all": playlists retry in place (two at a time); single videos start again. */
+    fun retryAll() {
+        val stopped = _records.value.filter { it.status == DownloadStatus.FAILED || it.status == DownloadStatus.CANCELLED }
+        stopped.mapNotNull { it.group }.toSet().forEach(::retryGroup)
+        stopped.filter { it.group == null }.forEach { retry(it.id) }
+    }
+
+    /** "Remove playlist from list": its rows go; the files stay in the download folder. */
+    fun removeGroup(group: String) = save(_records.value.filterNot { it.group == group })
+
+    /** Clear menu: removes every row with one of [statuses]; the files stay. */
+    fun clear(statuses: Set<DownloadStatus>) = save(_records.value.filterNot { it.status in statuses })
+
+    private val UNFINISHED = setOf(DownloadStatus.RUNNING, DownloadStatus.QUEUED, DownloadStatus.PAUSED)
+
+    /**
+     * Marks the matching rows in [from] as [to] first, then ends their yt-dlp processes. In this order a
+     * stopped download's "start the next one" finds nothing waiting, so no new video starts.
+     */
+    private fun markThenKill(match: (DownloadRecord) -> Boolean, from: Set<DownloadStatus>, to: DownloadStatus) {
+        val hit = synchronized(this) {
+            val hit = _records.value.filter { match(it) && it.status in from }.map { it.id }.toSet()
+            save(_records.value.map { if (it.id in hit) it.copy(status = to) else it })
+            hit
+        }
+        hit.forEach { id -> processes[id]?.let(::kill) }
+    }
+
+    private fun requeue(group: String, from: Set<DownloadStatus>) {
+        synchronized(this) {
+            save(_records.value.map {
+                if (it.group == group && it.status in from) it.copy(status = DownloadStatus.QUEUED, error = null) else it
+            })
+        }
+        pump(group)
+    }
+
     /** Opens a finished download in the PC's default player. */
     fun open(record: DownloadRecord) {
         record.uri?.let { path -> runCatching { Desktop.getDesktop().open(File(path)) } }

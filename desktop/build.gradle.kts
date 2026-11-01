@@ -39,9 +39,24 @@ compose.desktop {
     application {
         mainClass = "com.saheed.videodownloader.desktop.MainKt"
         nativeDistributions {
+            // .msi needs the WiX toolset; without it, use createDistributable / packageZip below.
             targetFormats(TargetFormat.Msi)
             packageName = "VideoDownloader"
             packageVersion = "1.0.0"
+            description = "Download videos and MP3s with yt-dlp"
+            vendor = "Saheed"
+            // The packaged app carries its own trimmed-down Java with only these parts
+            // (from `gradlew :desktop:suggestRuntimeModules`, plus jdk.crypto.ec for HTTPS on Java 21).
+            modules("java.instrument", "java.net.http", "jdk.unsupported", "jdk.crypto.ec")
         }
     }
+}
+
+// `gradlew :desktop:packageZip` → desktop/build/dist/VideoDownloader-<version>-windows.zip:
+// the VideoDownloader folder (exe + its own Java), ready to attach to a GitHub Release.
+tasks.register<Zip>("packageZip") {
+    dependsOn("createDistributable")
+    from(layout.buildDirectory.dir("compose/binaries/main/app"))
+    archiveFileName.set("VideoDownloader-1.0.0-windows.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("dist"))
 }

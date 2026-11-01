@@ -12,12 +12,13 @@ phone** with **yt-dlp** + **ffmpeg** — no server.
 - **Core goal for the iPhones:** Share → More → Download Video → pick quality → video lands in the **Photos** app. No copy-pasting links into websites, no digging through the Files app.
 - **Personal use only.** Not published to Play Store, App Store or any website.
 
-## Two parts
+## Three parts
 
 | Part | What it is | Status |
 |------|------------|--------|
-| **Android app** (Phases 1–3, built first) | Native Kotlin + Jetpack Compose app using `youtubedl-android`. Appears in the share sheet, lists the qualities the video actually has (like YouTube's menu) + MP3, downloads in the background, saves to Downloads. | Not started — next is **Task 1** |
+| **Android app** (Phases 1–3, built first) | Native Kotlin + Jetpack Compose app using `youtubedl-android`. Appears in the share sheet, lists the qualities the video actually has (like YouTube's menu) + MP3, downloads in the background, saves to Downloads. | Built (Phases 1–5, plus F1–F7 and V1). Phone check of the latest changes pending — see `tasks/todo.md` |
 | **iPhone** (Phase 4) | **Not an app.** An iOS Shortcut (shown in the share sheet) that runs yt-dlp inside the free **a-Shell** App Store app, then saves the video to Photos. No Mac needed. | Not started — Task 10 is a feasibility check |
+| **Windows desktop app** (Phase 6) | Kotlin + **Compose for Desktop** in `desktop/`, sharing logic with Android through `shared/`. Runs `yt-dlp.exe` (downloaded on first start into `%LOCALAPPDATA%\VideoDownloader\bin`) and ffmpeg (from PATH, else downloaded). Paste or drop a link → qualities → Downloads folder. | Built (D1–D6). Run: `gradlew :desktop:run`. Package: `gradlew :desktop:packageZip` → `desktop/build/dist/VideoDownloader-1.0.0-windows.zip` |
 
 ## How to work with Saheed
 
@@ -64,3 +65,4 @@ Full reasoning in `tasks/plan.md` → "Architecture Decisions" (numbered 1–15)
 
 - `tasks/plan.md` — full plan: UI flows (Android + iPhone), decisions, every task with acceptance criteria + verification, risks.
 - `tasks/todo.md` — checklist; tick items as they finish.
+- Modules: `app/` (Android), `shared/` (pure Kotlin logic used by both apps: quality list, clip, playlists, yt-dlp options, download records), `desktop/` (Windows app).

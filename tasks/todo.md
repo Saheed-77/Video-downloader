@@ -62,7 +62,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] D3: Engine (official yt-dlp.exe + ffmpeg), lookup shows real qualities and thumbnail — checked on this PC (yt-dlp 2026.10.26 downloaded on first start, ffmpeg from PATH; "Me at the zoo" showed thumbnail, details and Best/240p/144p/MP3) — **Checkpoint**
 - [x] D4: Downloads with progress, Cancel, Retry, Open, to ~/Downloads — checked on this PC: 240p (H.264 + AAC), MP3 (cover + tags), 1080p at 14 MB/s with live speed/time left, Cancel (process stopped, no file left), Settings (format, folder, engine)
 - [x] D5: Playlists with sections, Clear, search, drag-and-drop a link — checked on this PC: playlist section (Stop / Resume / Cancel one video / Cancel all), Clear failed and cancelled, search, Home keeps its lookup, Subtitles + Clip (10.0 s clip; error for a too-long end). Drag-and-drop not checked (can't be simulated)
-- [ ] D6: Packaged VideoDownloader.exe (zip for GitHub Releases) — **Checkpoint**
+- [x] D6: Packaged VideoDownloader.exe (zip for GitHub Releases) — `gradlew :desktop:packageZip` → 64 MB zip (128 MB folder: exe + its own Java). Checked on this PC: the packaged exe looks up (thumbnail over HTTPS), downloads, and fetches yt-dlp.exe on a fresh start. No .msi (WiX not installed) — **Checkpoint**
 - [ ] **Checkpoint:** review extras
 - [ ] U8: Wrap-up — test-matrix rows (section 3b) and CLAUDE.md done; on the S24 P11, P13–P16, P18 pass; P1–P10, P12, P17 still to run
 

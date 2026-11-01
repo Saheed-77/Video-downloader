@@ -484,6 +484,23 @@ Saheed picked these after the first successful downloads on the S24.
 
 ---
 
+## Phase 6: Windows desktop app — agreed 2026-10-31 (built 1 Nov)
+
+Saheed chose his own desktop app: Kotlin + Compose for Desktop, in this repo, sharing logic with Android.
+
+| Task | What | Result |
+|------|------|--------|
+| D1 | `shared/` module with the Android-free logic | Done; Android app uses it |
+| D2 | `desktop/` window with Home / Downloads / Settings | Done |
+| D3 | Engine: official yt-dlp.exe (first start), ffmpeg from PATH or downloaded, weekly update; lookup with thumbnail | Done, checked on the PC — **Checkpoint** |
+| D4 | Downloads with progress, Cancel, Retry, Open, Show in folder; Settings (format, folder, engine) | Done, checked on the PC |
+| D5 | Playlist sections (Stop/Resume/Cancel/Retry), Cancel/Retry all, Clear, search, Subtitles, Clip, drag-and-drop | Done, checked on the PC (drag-and-drop by Saheed) |
+| D6 | Packaged `VideoDownloader.exe` with its own Java (zip for GitHub Releases); `.msi` only with the WiX toolset | Done, checked on the PC — **Checkpoint** |
+
+Desktop video format: no "Auto" (Windows can't reliably report AV1 playback); default Most compatible (H.264).
+
+---
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |

@@ -59,7 +59,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 ## Phase 6: Windows desktop app (Saheed chose: own app, Kotlin + Compose for Desktop, same repo)
 - [x] D1: Move the pure logic into a `:shared` module used by the Android app — 60 shared + 29 app tests pass, APK builds; phone check pending
 - [x] D2: `:desktop` module, a window with Home / Downloads / Settings — `gradlew :desktop:run` opens it (Compose Multiplatform 1.12.2)
-- [ ] D3: Engine (official yt-dlp.exe + ffmpeg), lookup shows real qualities and thumbnail — **Checkpoint**
+- [x] D3: Engine (official yt-dlp.exe + ffmpeg), lookup shows real qualities and thumbnail — checked on this PC (yt-dlp 2026.10.26 downloaded on first start, ffmpeg from PATH; "Me at the zoo" showed thumbnail, details and Best/240p/144p/MP3) — **Checkpoint**
 - [ ] D4: Downloads with progress, Cancel, Retry, Open, to ~/Downloads
 - [ ] D5: Playlists with sections, Clear, search, drag-and-drop a link
 - [ ] D6: Packaged VideoDownloader.exe (zip for GitHub Releases) — **Checkpoint**

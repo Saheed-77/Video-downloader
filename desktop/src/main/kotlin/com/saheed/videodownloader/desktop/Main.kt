@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ fun DesktopTheme(content: @Composable () -> Unit) {
 @Composable
 fun App() {
     var tab by remember { mutableStateOf(Tab.HOME) }
+    var picked by remember { mutableStateOf<String?>(null) }
     Surface(Modifier.fillMaxSize()) {
         Row {
             NavigationRail(Modifier.fillMaxHeight()) {
@@ -61,7 +63,21 @@ fun App() {
                 }
             }
             Box(Modifier.fillMaxSize().padding(24.dp)) {
-                Text("${tab.label} — coming in the next steps", style = MaterialTheme.typography.headlineSmall)
+                when (tab) {
+                    // Downloading starts in D4; for now a pick just says what would be downloaded.
+                    Tab.HOME -> HomeScreen(
+                        onPickVideo = { _, meta, option -> picked = "${option.label}: ${meta.title}" },
+                        onPickPlaylist = { playlist, option -> picked = "${option.label}: ${playlist.title}" },
+                    )
+                    else -> Text("${tab.label} — coming in the next steps", style = MaterialTheme.typography.headlineSmall)
+                }
+                picked?.let {
+                    Text(
+                        "Picked $it (downloading comes next)",
+                        modifier = Modifier.align(Alignment.BottomStart),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }

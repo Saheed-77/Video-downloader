@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.saheed.videodownloader.download.ErrorMapperTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-01T12:40:02.107Z" hostname="DEVBOT" time="0.062">
+  <properties/>
+  <testcase name="missingFormat" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.043"/>
+  <testcase name="missingPlaylist" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.001"/>
+  <testcase name="unavailable" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.002"/>
+  <testcase name="unsupportedLink" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.0"/>
+  <testcase name="privateVideo" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.001"/>
+  <testcase name="anythingElseSuggestsUpdating" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.0"/>
+  <testcase name="instagramLogin" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.001"/>
+  <testcase name="facebookLogin" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.0"/>
+  <testcase name="noInternet" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.001"/>
+  <testcase name="youtubeBotCheck" classname="com.saheed.videodownloader.download.ErrorMapperTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

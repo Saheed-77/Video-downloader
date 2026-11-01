@@ -86,12 +86,9 @@ object DownloadStore {
         next.forEach { DownloadWorker.start(context, it) }
     }
 
-    /** The waiting videos of [group] to start now, in list order. Pure, so tests can check it. */
-    fun nextToStart(records: List<DownloadRecord>, group: String): List<DownloadRecord> {
-        val inGroup = records.filter { it.group == group }
-        val free = DownloadWorker.AT_A_TIME - inGroup.count { it.status == DownloadStatus.RUNNING }
-        return if (free <= 0) emptyList() else inGroup.filter { it.status == DownloadStatus.QUEUED }.take(free)
-    }
+    /** The waiting videos of [group] to start now, in list order (the shared rule). */
+    fun nextToStart(records: List<DownloadRecord>, group: String): List<DownloadRecord> =
+        nextToStart(records, group, DownloadWorker.AT_A_TIME)
 
     // ---- One download ----
 

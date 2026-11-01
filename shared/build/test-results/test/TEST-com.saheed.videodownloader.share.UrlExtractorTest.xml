@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.saheed.videodownloader.share.UrlExtractorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-01T12:40:02.364Z" hostname="DEVBOT" time="0.008">
+  <properties/>
+  <testcase name="textAroundLink" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.003"/>
+  <testcase name="firstLinkWins" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.001"/>
+  <testcase name="linkOnNewLineAfterTitle" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.0"/>
+  <testcase name="fbWatch" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.001"/>
+  <testcase name="noLink" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.0"/>
+  <testcase name="youtuBe" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.0"/>
+  <testcase name="youtubeShorts" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.0"/>
+  <testcase name="instagramReel" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.0"/>
+  <testcase name="nullOrEmpty" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.0"/>
+  <testcase name="trailingPunctuationDropped" classname="com.saheed.videodownloader.share.UrlExtractorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

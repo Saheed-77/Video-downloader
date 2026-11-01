@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.saheed.videodownloader.ui.DownloadBlocksTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-01T12:40:02.377Z" hostname="DEVBOT" time="0.008">
+  <properties/>
+  <testcase name="summaryShowsOnlyCountsThatAreNotZero" classname="com.saheed.videodownloader.ui.DownloadBlocksTest" time="0.005"/>
+  <testcase name="playlistsBecomeOneSectionWhereTheirFirstVideoIs" classname="com.saheed.videodownloader.ui.DownloadBlocksTest" time="0.002"/>
+  <testcase name="searchMatchesTitleOrPlaylistNameIgnoringCase" classname="com.saheed.videodownloader.ui.DownloadBlocksTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

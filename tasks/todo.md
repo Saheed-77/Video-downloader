@@ -57,7 +57,7 @@ See `tasks/plan.md` for details, acceptance criteria and verification for each t
 - [x] V1: "Video format" setting — Auto for this phone (AV1 when the phone decodes it in hardware, else H.264), Smallest files (AV1/VP9 + Opus), Most compatible (H.264 + AAC); picker sizes follow it — build + tests pass, phone check pending
 
 ## Phase 6: Windows desktop app (Saheed chose: own app, Kotlin + Compose for Desktop, same repo)
-- [ ] D1: Move the pure logic into a `:shared` module used by the Android app
+- [x] D1: Move the pure logic into a `:shared` module used by the Android app — 60 shared + 29 app tests pass, APK builds; phone check pending
 - [ ] D2: `:desktop` module, a window with Home / Downloads / Settings
 - [ ] D3: Engine (official yt-dlp.exe + ffmpeg), lookup shows real qualities and thumbnail — **Checkpoint**
 - [ ] D4: Downloads with progress, Cancel, Retry, Open, to ~/Downloads

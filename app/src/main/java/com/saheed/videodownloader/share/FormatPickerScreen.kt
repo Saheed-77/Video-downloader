@@ -63,6 +63,7 @@ import com.saheed.videodownloader.formats.FormatParser
 import com.saheed.videodownloader.formats.Playlist
 import com.saheed.videodownloader.formats.QualityOption
 import com.saheed.videodownloader.formats.VideoMeta
+import com.saheed.videodownloader.formats.fromVideoInfo
 import com.saheed.videodownloader.update.EngineUpdater
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest

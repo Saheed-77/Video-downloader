@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "VideoDownloader"
 include(":app")
 include(":shared")
+include(":desktop")
